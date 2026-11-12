@@ -10,8 +10,11 @@ def seed_pages_and_perms(apps, schema_editor):
     from apps.core.models import PageContent as LivePage
 
     PageContent = apps.get_model("core", "PageContent")
-    for key, _ in LivePage.PAGES:
-        PageContent.objects.get_or_create(page=key, defaults=LivePage.DEFAULTS.get(key, {}))
+    for key, _ in LivePage.BUILTIN:  # built-in pages only (PAGES later gained "custom")
+        # only fields that exist at this migration (DEFAULTS also holds fields added later)
+        known = {f.name for f in PageContent._meta.get_fields()}
+        defaults = {k: v for k, v in LivePage.DEFAULTS.get(key, {}).items() if k in known}
+        PageContent.objects.get_or_create(page=key, defaults=defaults)
 
     core_cfg = apps.get_app_config("core")
     core_cfg.models_module = True

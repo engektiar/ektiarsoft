@@ -7,8 +7,9 @@ from django.utils.text import slugify
 def validate_image_size(file):
     from django.core.exceptions import ValidationError
 
-    if file and getattr(file, "size", 0) > 5 * 1024 * 1024:
-        raise ValidationError("Image is too large: maximum size is 5 MB.")
+    # 4 MB: Vercel rejects request bodies larger than 4.5 MB
+    if file and getattr(file, "size", 0) > 4 * 1024 * 1024:
+        raise ValidationError("Image is too large: maximum size is 4 MB.")
 
 
 class SluggedModel(models.Model):
@@ -81,7 +82,7 @@ class SiteSetting(models.Model):
     google_analytics_id = models.CharField(max_length=30, blank=True, help_text="e.g. G-XXXXXXX")
     photo = models.ImageField(
         "profile photo", upload_to="profile/", blank=True, validators=[validate_image_size],
-        help_text="Your photo: square works best (e.g. 800×800 px, JPG/PNG/WebP, under 5 MB). "
+        help_text="Your photo: square works best (e.g. 800×800 px, JPG/PNG/WebP, under 4 MB). "
                   "Shown in About sections and on blog posts.",
     )
     resume = models.FileField(upload_to="resume/", blank=True)

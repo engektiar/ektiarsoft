@@ -38,10 +38,18 @@ def env_list(key, default=""):
 
 
 # --- core ------------------------------------------------------------------
+ON_VERCEL = env("VERCEL") == "1"  # Vercel sets VERCEL=1 automatically
+
 SECRET_KEY = env("SECRET_KEY", "dev-insecure-change-me-in-production")
-DEBUG = env_bool("DEBUG", True)
+if ON_VERCEL and SECRET_KEY.startswith("dev-insecure"):
+    raise RuntimeError("Set a SECRET_KEY environment variable in Vercel -> Settings -> Environment Variables.")
+# On Vercel DEBUG is always off (a copied DEBUG=True must never expose error pages live)
+DEBUG = False if ON_VERCEL else env_bool("DEBUG", True)
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "")
+if ON_VERCEL:
+    ALLOWED_HOSTS += [".vercel.app"]
+    CSRF_TRUSTED_ORIGINS += ["https://*.vercel.app"]
 SITE_URL = env("SITE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 INSTALLED_APPS = [
@@ -126,6 +134,26 @@ else:
         }
     }
 
+
+def _db_from_url(url):
+    """postgres://… (Neon), mysql://… or sqlite:///path -> Django DATABASES entry."""
+    import dj_database_url
+
+    cfg = dj_database_url.parse(url, conn_max_age=0, conn_health_checks=True)
+    if cfg["ENGINE"].endswith("postgresql"):
+        cfg.setdefault("OPTIONS", {}).setdefault("sslmode", "require")
+    return cfg
+
+
+# DATABASE_URL (e.g. from Neon) overrides DB_ENGINE — used on Vercel.
+if env("DATABASE_URL"):
+    DATABASES["default"] = _db_from_url(env("DATABASE_URL"))
+# CLOUD_DATABASE_URL: a second connection used only by `manage.py clone_to_cloud`.
+if env("CLOUD_DATABASE_URL"):
+    DATABASES["cloud"] = _db_from_url(env("CLOUD_DATABASE_URL"))
+if ON_VERCEL and DATABASES["default"]["ENGINE"].endswith("sqlite3"):
+    raise RuntimeError("Set DATABASE_URL (your Neon connection string) in Vercel -> Environment Variables.")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
@@ -158,13 +186,22 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Cloudinary is used on Vercel; locally only if USE_CLOUDINARY=True (clone_to_cloud uses it directly)
+USE_CLOUDINARY = bool(env("CLOUDINARY_URL")) and (ON_VERCEL or env_bool("USE_CLOUDINARY", False))
+if ON_VERCEL and not USE_CLOUDINARY:
+    raise RuntimeError("Set CLOUDINARY_URL in Vercel -> Environment Variables (uploads need cloud storage).")
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # uploads: Cloudinary when CLOUDINARY_URL is set, otherwise the local media/ folder
+    "default": {"BACKEND": "apps.core.storage.CloudinaryStorage" if USE_CLOUDINARY
+                else "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if DEBUG
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if (DEBUG or ON_VERCEL)
         else "whitenoise.storage.CompressedManifestStaticFilesStorage"
     },
 }
+# On Vercel there is no collectstatic step: WhiteNoise serves files straight from the app folders.
+WHITENOISE_USE_FINDERS = ON_VERCEL
+WHITENOISE_AUTOREFRESH = DEBUG
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

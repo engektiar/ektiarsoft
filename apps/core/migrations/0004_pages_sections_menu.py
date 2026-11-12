@@ -104,7 +104,9 @@ def seed_builder(apps, schema_editor):
 
     labels = dict(Live.BUILTIN)
     for key, label in Live.BUILTIN:
-        page, _ = PageContent.objects.get_or_create(page=key, defaults=Live.DEFAULTS.get(key, {}))
+        page_fields = {f.name for f in PageContent._meta.get_fields()}
+        defaults = {k: v for k, v in Live.DEFAULTS.get(key, {}).items() if k in page_fields}
+        page, _ = PageContent.objects.get_or_create(page=key, defaults=defaults)
         page.title = page.title or label
         page.slug = page.slug or key
         for f in ("meta_title", "meta_description"):
@@ -116,6 +118,8 @@ def seed_builder(apps, schema_editor):
                 cfg = dict(cfg)
                 if key == "about" and cfg["kind"] == "about" and owner:
                     cfg["highlight"] = owner + "."
+                section_fields = {f.name for f in Section._meta.get_fields()}
+                cfg = {k: v for k, v in cfg.items() if k in section_fields}
                 Section.objects.create(page=page, order=(i + 1) * 10, **cfg)
     del labels
 
