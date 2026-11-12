@@ -1,0 +1,23 @@
+{% load ui %}{% with is_pw=field.name|slice:":8" %}
+<div class="af {% if full %}full{% endif %}">
+  <label for="{{ field.id_for_label }}">
+    <span>{{ field.label }}{% if field.field.required %} <span aria-hidden="true" style="color:var(--primary-2)">*</span>{% endif %}</span>
+    {% if extra_link %}{{ extra_link|safe }}{% endif %}
+  </label>
+  <div class="af-control {% if is_pw == 'password' %}has-eye{% endif %} {% if field|field_type == 'Textarea' %}af-textarea{% endif %}">
+    {% icon field.field.icon|default:'user' 18 %}
+    {{ field }}
+    {% if is_pw == 'password' %}
+    <button type="button" class="eye" data-eye aria-label="Show password" aria-pressed="false">
+      <span class="eye-on">{% icon 'eye' 18 %}</span><span class="eye-off">{% icon 'eye-off' 18 %}</span>
+    </button>
+    {% endif %}
+  </div>
+  {% if field.errors %}
+    {% for e in field.errors %}<p class="error">{% icon 'alert' 14 %}<span>{{ e }}</span></p>{% endfor %}
+  {% endif %}
+  {% if meter %}<div class="strength" data-strength aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="hint" data-strength-hint>Use 8+ characters with letters, numbers &amp; symbols.</p>{% endif %}
+  {% if match %}<p class="hint" data-match-hint></p>{% endif %}
+  {% if counter %}<p class="hint counter"><span data-count-for="{{ field.id_for_label }}">0</span> / {{ field.field.widget.attrs.maxlength }}</p>{% endif %}
+</div>
+{% endwith %}

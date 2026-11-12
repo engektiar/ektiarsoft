@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ project.title }} — {{ project.get_category_display }} Case Study | {{ site.site_name }}{% endblock %}
+{% block description %}{{ project.summary|truncatechars:158 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ project.title }}{% endblock %}
+{% block og_image %}{% if project.image %}{{ SITE_URL }}{{ project.image.url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block schema %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CreativeWork","name":"{{ project.title|escapejs }}","description":"{{ project.summary|escapejs }}","creator":{"@id":"{{ SITE_URL }}/#person"},"url":"{{ canonical_url }}"{% if project.completed_on %},"dateCreated":"{{ project.completed_on|date:'Y-m-d' }}"{% endif %}}
+</script>
+{% endblock %}
+
+{% block content %}
+{% url 'core:portfolio' as pf_url %}
+{% include "partials/_page_hero.html" with crumb_url=pf_url crumb_label="portfolio" current=project.title eyebrow=project.get_category_display heading=project.title lead=project.summary %}
+
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="cover reveal">
+      {% if project.image %}<img src="{{ project.image.url }}" alt="{{ project.title }}" width="1200" height="675">
+      {% else %}<div class="project-thumb" style="aspect-ratio:21/9"><div class="thumb-placeholder"><span>{{ project.title|slice:":2"|upper }}</span></div></div>{% endif %}
+    </div>
+    <div class="split split-wide">
+      <div class="prose reveal">{{ project.body|safe|linebreaks }}</div>
+      <aside class="card reveal reveal-d1">
+        <h3>Project info</h3>
+        <ul class="check-list">
+          {% if project.client %}<li>{% icon 'user' 16 %}<span><strong>Client:</strong> {{ project.client }}</span></li>{% endif %}
+          <li>{% icon 'layers' 16 %}<span><strong>Type:</strong> {{ project.get_category_display }}</span></li>
+          {% if project.completed_on %}<li>{% icon 'clock' 16 %}<span><strong>Completed:</strong> {{ project.completed_on|date:"F Y" }}</span></li>{% endif %}
+        </ul>
+        <div class="tags" style="padding:0 0 1.2rem">{% for t in project.stack_list %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+        {% if project.live_url %}<a href="{{ project.live_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-block" style="margin-bottom:.6rem">{% icon 'external' 16 %} Live site</a>{% endif %}
+        {% if project.repo_url %}<a href="{{ project.repo_url }}" target="_blank" rel="noopener" class="btn btn-ghost btn-block">{% icon 'github' 16 %} Source code</a>{% endif %}
+      </aside>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">More work</span><h2>Related <span class="grad-text">projects.</span></h2></div>
+    <div class="grid grid-3">{% for project in related %}{% include "partials/_project_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+{% include "partials/_cta.html" %}
+{% endblock %}

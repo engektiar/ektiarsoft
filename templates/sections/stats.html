@@ -1,0 +1,7 @@
+{% extends "sections/_base.html" %}
+{% block body %}{% include "sections/_head.html" %}
+<div class="grid {% if section.rows|length >= 4 %}grid-4{% else %}grid-3{% endif %}">
+  {% for r in section.rows %}
+  <div class="card stat-card reveal"><strong class="grad-text">{{ r.0 }}</strong><span>{{ r.1 }}</span></div>
+  {% endfor %}
+</div>{% endblock %}

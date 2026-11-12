@@ -1,0 +1,11 @@
+{% extends "sections/_base.html" %}{% load ui %}
+{% block body %}{% include "sections/_head.html" %}
+<div class="grid {% if section.rows|length == 4 %}grid-4{% elif section.rows|length == 2 %}grid-2{% else %}grid-3{% endif %}">
+  {% for r in section.rows %}
+  <div class="card card-spot reveal">
+    <div class="card-icon">{% icon r.0 24 %}</div>
+    <h3>{{ r.1 }}</h3>
+    {% if r.2 %}<p>{{ r.2 }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>{% endblock %}

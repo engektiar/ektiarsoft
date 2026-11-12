@@ -1,0 +1,68 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}{% if obj %}Edit section{% else %}New section{% endif %}{% endblock %}
+{% block heading %}{% if obj %}Edit section · {{ obj.page }}{% else %}New section{% endif %}{% endblock %}
+{% block dash %}
+<div class="card panel form-card">
+  <div class="panel-head">
+    <h2 data-kind-title>{% if obj %}{{ obj.get_kind_display }}{% else %}New section{% endif %}</h2>
+    <a href="{{ next|default:'javascript:history.back()' }}" class="btn btn-ghost btn-sm">← Back to page</a>
+  </div>
+  <div class="panel-body">
+    <form method="post" enctype="multipart/form-data" novalidate data-section-form
+          data-fields="{{ form.kind_fields_json }}" data-help="{{ form.item_help_json }}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {{ form.page }}
+      {% if form.non_field_errors %}<p class="error">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+      {% if form.page.errors %}<p class="error">Page: {{ form.page.errors|join:" " }}</p>{% endif %}
+      <p class="kind-hint" data-kind-hint hidden></p>
+      <div class="form-grid">
+        {% for field in form.visible_fields %}{% include "dashboard/_field.html" %}{% endfor %}
+      </div>
+      <div class="form-actions">
+        <a href="{{ next|default:'javascript:history.back()' }}" class="btn btn-ghost">Cancel</a>
+        <button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save section</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block dash_js %}
+<script>
+(function () {
+  var form = document.querySelector("[data-section-form]"); if (!form) return;
+  var map = JSON.parse(form.dataset.fields), help = JSON.parse(form.dataset.help);
+  var always = ["kind", "is_active", "style", "order"];
+  var kind = form.querySelector("[name=kind]"), hint = form.querySelector("[data-kind-hint]");
+  var title = document.querySelector("[data-kind-title]");
+  function apply() {
+    var k = kind.value, show = always.concat(map[k] || []);
+    form.querySelectorAll("[data-field]").forEach(function (el) {
+      el.classList.toggle("is-hidden", show.indexOf(el.dataset.field) === -1);
+    });
+    var itemsHelp = form.querySelector('[data-field="items"] .help');
+    var text = help[k] || "";
+    if (itemsHelp) itemsHelp.textContent = text;
+    var notes = {
+      tech_marquee: "Shows your Tech Stack as a scrolling ticker. Manage the list under Content → Tech Stack.",
+      services: "Shows your Services. Manage them under Content → Services.",
+      projects: "Shows published projects. Manage them under Content → Portfolio.",
+      portfolio_grid: "All published projects with category filter buttons.",
+      pricing: "Shows active plans from Content → Pricing Plans.",
+      testimonials: "Shows published testimonials from Content → Testimonials.",
+      faq: "Shows active questions from Content → FAQs.",
+      blog_posts: "Shows the latest published blog posts.",
+      blog_list: "Full blog list with category filter, search and pagination. Use it on the Blog page.",
+      skills: "Skill bars grouped by category, from Content → Tech Stack.",
+      contact_form: "Contact details (from Site Settings) + the contact form. Messages arrive in CRM → Inbox.",
+      html: "Paste any HTML: a video embed, a map, a widget…"
+    };
+    hint.textContent = notes[k] || "";
+    hint.hidden = !notes[k];
+    if (title && kind.selectedOptions[0]) title.textContent = kind.selectedOptions[0].text;
+  }
+  kind.addEventListener("change", apply);
+  apply();
+})();
+</script>
+{% endblock %}

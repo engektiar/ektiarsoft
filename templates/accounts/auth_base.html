@@ -1,0 +1,131 @@
+{% extends "base.html" %}{% load static ui %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/auth.css' %}">{% endblock %}
+{% block body_class %}auth-body{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+  <!-- ============ brand panel ============ -->
+  <aside class="auth-aside">
+    <a href="{% url 'core:home' %}" class="brand">{% include "partials/_logo.html" %}</a>
+
+    <div class="auth-aside-mid">
+      <div>
+        <span class="eyebrow">Client portal</span>
+        <h2>{% block aside_title %}Your projects, <span class="grad-text">one smart portal.</span>{% endblock %}</h2>
+        <p class="lead">{% block aside_lead %}Submit ideas, follow progress in real time and talk directly with {{ site.owner_name }} — all in one secure place.{% endblock %}</p>
+      </div>
+
+      <div class="preview" aria-hidden="true">
+        <div class="preview-head"><b>My requests</b><span>dashboard</span></div>
+        <div class="preview-row">
+          <span class="p-ic">{% icon 'cloud' 16 %}</span>
+          <span class="p-txt">SaaS platform MVP<small>Updated 2h ago</small></span>
+          <span class="status status-progress">In progress</span>
+        </div>
+        <div class="preview-row">
+          <span class="p-ic">{% icon 'mobile' 16 %}</span>
+          <span class="p-txt">Android companion app<small>Quote ready</small></span>
+          <span class="status status-quoted">Quoted</span>
+        </div>
+        <div class="preview-row">
+          <span class="p-ic">{% icon 'chart' 16 %}</span>
+          <span class="p-txt">SEO & growth campaign<small>Delivered</small></span>
+          <span class="status status-done">Completed</span>
+        </div>
+        <div class="progress"><i></i></div>
+      </div>
+
+      <ul class="perks">
+        <li><span class="perk-ic">{% icon 'zap' 18 %}</span><div><strong>Real-time project tracking</strong><span>See every status change and note the moment it happens.</span></div></li>
+        <li><span class="perk-ic">{% icon 'users' 18 %}</span><div><strong>Direct line to your developer</strong><span>No middlemen — {{ site.years_experience }}+ years of experience on your project.</span></div></li>
+        <li><span class="perk-ic">{% icon 'shield' 18 %}</span><div><strong>Secure, role-based access</strong><span>Your data is private and only visible to you.</span></div></li>
+      </ul>
+    </div>
+
+    <div class="auth-aside-foot">
+      <span>{% icon 'lock' 14 %} Encrypted passwords</span>
+      <span>{% icon 'check' 14 %} Free to join</span>
+      <span>{% icon 'clock' 14 %} Reply within 24h</span>
+    </div>
+  </aside>
+
+  <!-- ============ form panel ============ -->
+  <section class="auth-panel">
+    <div class="auth-top">
+      <a href="{% url 'core:home' %}" class="back">{% icon 'arrow' 16 %} Back to website</a>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle color theme"><span class="sun">{% icon 'sun' 18 %}</span><span class="moon">{% icon 'moon' 18 %}</span></button>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="seg" role="tablist">
+        <a href="{% url 'accounts:login' %}" class="{% if auth_mode == 'login' %}on{% endif %}" role="tab" aria-selected="{% if auth_mode == 'login' %}true{% else %}false{% endif %}">Sign in</a>
+        <a href="{% url 'accounts:register' %}" class="{% if auth_mode == 'register' %}on{% endif %}" role="tab" aria-selected="{% if auth_mode == 'register' %}true{% else %}false{% endif %}">Create account</a>
+      </div>
+      {% block auth_form %}{% endblock %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // show / hide password
+  document.querySelectorAll("[data-eye]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var input = btn.parentElement.querySelector("input");
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.setAttribute("aria-pressed", show);
+      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    });
+  });
+
+  // strength meter
+  var pw = document.getElementById("id_password1"), meter = document.querySelector("[data-strength]"),
+      hint = document.querySelector("[data-strength-hint]"), pw2 = document.getElementById("id_password2"),
+      match = document.querySelector("[data-match-hint]");
+  var labels = ["", "Weak — add more characters", "Fair — mix in numbers or symbols", "Good — almost there", "Strong password"];
+  function score(v) {
+    if (!v) return 0;
+    var s = 0;
+    if (v.length >= 8) s++;
+    if (v.length >= 12) s++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+    if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) s++;
+    return Math.max(1, Math.min(4, s));
+  }
+  function checkMatch() {
+    if (!pw2 || !match) return;
+    if (!pw2.value) { match.textContent = ""; match.className = "hint"; return; }
+    var ok = pw2.value === pw.value;
+    match.textContent = ok ? "✓ Passwords match" : "Passwords don't match yet";
+    match.className = "hint " + (ok ? "ok" : "bad");
+  }
+  if (pw && meter) {
+    pw.addEventListener("input", function () {
+      var s = score(pw.value);
+      meter.dataset.score = s;
+      hint.textContent = s ? labels[s] : "Use 8+ characters with letters, numbers & symbols.";
+      hint.className = "hint" + (s === 4 ? " ok" : "");
+      checkMatch();
+    });
+  }
+  pw2 && pw2.addEventListener("input", checkMatch);
+
+  // prevent double submit
+  document.querySelectorAll("form[data-auth]").forEach(function (f) {
+    f.addEventListener("submit", function () {
+      var b = f.querySelector("[type=submit]");
+      if (b) { b.disabled = true; b.querySelector("span").textContent = b.dataset.loading || "Please wait…"; }
+    });
+  });
+
+  // focus first empty / invalid field
+  var first = document.querySelector(".input.is-invalid") || document.querySelector(".auth-form-wrap .input");
+  first && first.focus({ preventScroll: true });
+})();
+</script>
+{% endblock %}

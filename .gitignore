@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.env
+db.sqlite3
+media/
+staticfiles/
+.venv/
+venv/
+.vscode/
+.idea/
+*.sqlite3
+
+# local AI-tool / editor settings (not part of the website)
+.mcp.json
+.cursor/
+.claude/
+charter.yaml
+charter_audits/
+CLAUDE.md
+system-prompt.txt
+
+# misc
+*.log
+.DS_Store
+Thumbs.db

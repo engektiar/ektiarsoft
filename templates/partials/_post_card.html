@@ -1,0 +1,15 @@
+{% load ui %}<article class="card card-spot post-card reveal">
+  <a href="{{ post.get_absolute_url }}" class="project-thumb" aria-label="{{ post.title }}">
+    {% if post.cover %}<img src="{{ post.cover.url }}" alt="{{ post.title }}" loading="lazy" width="640" height="400">
+    {% else %}<div class="thumb-placeholder"><span>{% if post.category %}{{ post.category.name|slice:":2"|upper }}{% else %}{}{% endif %}</span></div>{% endif %}
+  </a>
+  <div class="project-body">
+    <div class="post-meta">
+      <time datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"M d, Y" }}</time>
+      <span>{{ post.reading_time }} min read</span>
+    </div>
+    <h3><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h3>
+    <p>{{ post.excerpt|truncatechars:140 }}</p>
+    <a href="{{ post.get_absolute_url }}" class="card-link">Read article {% icon 'arrow' 16 %}</a>
+  </div>
+</article>

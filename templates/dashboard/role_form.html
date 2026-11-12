@@ -1,0 +1,61 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}{% if obj %}Edit role{% else %}New role{% endif %}{% endblock %}
+{% block heading %}{% if obj %}Edit role · {{ obj.name }}{% else %}Create a role{% endif %}{% endblock %}
+{% block dash %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="card panel" style="margin-bottom:20px">
+    <div class="panel-head"><h2>Role details</h2><a href="{% url 'dashboard:list' 'roles' %}" class="btn btn-ghost btn-sm">← Back</a></div>
+    <div class="panel-body">
+      <div class="form-grid">
+        {% include "dashboard/_field.html" with field=form.name %}
+        {% include "dashboard/_field.html" with field=form.description %}
+        {% include "dashboard/_field.html" with field=form.is_default %}
+        {% include "dashboard/_field.html" with field=form.grants_all %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card panel">
+    <div class="panel-head">
+      <h2>Permissions</h2>
+      <div class="toolbar">
+        <button type="button" class="btn btn-ghost btn-sm" data-check-all="1">Select all</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-check-all="0">Clear</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <p class="muted" style="font-size:.9rem">Every model automatically gets <em>view / add / change / delete</em> permissions, plus custom ones like <em>access dashboard</em> or <em>manage roles</em>. Users holding this role receive exactly what you tick here.</p>
+      <div class="perm-groups">
+        {% for group, perms_list in form.grouped_permissions %}
+        <div class="perm-group">
+          <h4>{{ group }} <button type="button" class="link-btn" data-toggle-group>toggle</button></h4>
+          {% for perm, checked in perms_list %}
+          <label><input type="checkbox" name="permissions" value="{{ perm.pk }}" {% if checked %}checked{% endif %}> {{ perm.name|cut:"Can " }}</label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="form-actions" style="margin-top:20px">
+        <a href="{% url 'dashboard:list' 'roles' %}" class="btn btn-ghost">Cancel</a>
+        <button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save role</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block dash_js %}
+<script>
+  document.querySelectorAll("[data-check-all]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".perm-group input").forEach(function (i) { i.checked = b.dataset.checkAll === "1"; });
+    });
+  });
+  document.querySelectorAll("[data-toggle-group]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var boxes = b.closest(".perm-group").querySelectorAll("input"), all = Array.from(boxes).every(function (i) { return i.checked; });
+      boxes.forEach(function (i) { i.checked = !all; });
+    });
+  });
+</script>
+{% endblock %}

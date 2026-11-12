@@ -1,0 +1,78 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}{{ page.title }}: page editor{% endblock %}
+{% block heading %}Page · {{ page.title }}{% endblock %}
+{% block dash %}
+<div class="toolbar" style="margin-bottom:18px;justify-content:space-between">
+  <a href="{% url 'dashboard:list' 'pages' %}" class="btn btn-ghost btn-sm">← All pages</a>
+  <div class="toolbar">
+    {% if not page.is_published %}<span class="status status-no">Unpublished: hidden from visitors</span>{% endif %}
+    <a href="{{ page.get_absolute_url }}" target="_blank" class="btn btn-primary btn-sm">{% icon 'external' 16 %} View page</a>
+  </div>
+</div>
+
+<div class="pb-grid">
+  <!-- ============ sections ============ -->
+  <div>
+    <div class="card panel">
+      <div class="panel-head">
+        <div><h2>Sections</h2><small class="muted">Top to bottom, exactly as they appear on the page. Switch any section on or off.</small></div>
+      </div>
+      <ol class="sec-list">
+        {% for s in sections %}
+        <li class="sec-item {% if not s.is_active %}off{% endif %}" id="sec-{{ s.pk }}" data-sec>
+          <span class="sec-num">{{ forloop.counter }}</span>
+          <div class="sec-main">
+            <span class="card-icon">{% icon s.kind|kind_icon 18 %}</span>
+            <div class="sec-txt">
+              <strong>{% if s.title or s.highlight %}{{ s.title }} {{ s.highlight }}{% else %}{{ s.get_kind_display }}{% endif %}</strong>
+              <small>{{ s.get_kind_display }}{% if s.style != 'default' %} · {{ s.get_style_display }}{% endif %}</small>
+              {% if s.empty and s.is_active %}<small class="empty-note">Not shown: no items yet</small>{% endif %}
+            </div>
+          </div>
+          <div class="sec-tools">
+            {% if can_change_section %}
+              {% include "dashboard/_switch.html" with key="sections" pk=s.pk field="is_active" value=s.is_active %}
+              <form method="post" action="{% url 'dashboard:section_move' s.pk 'up' %}">{% csrf_token %}<button class="icon-btn mv-up" title="Move up" aria-label="Move up" {% if forloop.first %}disabled{% endif %}>{% icon 'arrow' 15 %}</button></form>
+              <form method="post" action="{% url 'dashboard:section_move' s.pk 'down' %}">{% csrf_token %}<button class="icon-btn mv-down" title="Move down" aria-label="Move down" {% if forloop.last %}disabled{% endif %}>{% icon 'arrow' 15 %}</button></form>
+              <a href="{% url 'dashboard:edit' 'sections' s.pk %}?next={{ request.path|urlencode }}" class="icon-btn" title="Edit" aria-label="Edit">{% icon 'edit' 15 %}</a>
+            {% endif %}
+            {% if can_delete_section %}<a href="{% url 'dashboard:delete' 'sections' s.pk %}?next={{ request.path|urlencode }}" class="icon-btn danger" title="Delete" aria-label="Delete">{% icon 'trash' 15 %}</a>{% endif %}
+          </div>
+        </li>
+        {% empty %}
+        <li class="empty">This page has no sections yet. Add one below.</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    {% if can_add_section %}
+    <details class="card panel add-sec" style="margin-top:20px" {% if not sections %}open{% endif %}>
+      <summary class="panel-head"><h2>{% icon 'plus' 18 %} Add a new section</h2><span class="muted" style="font-size:.85rem">choose a type</span></summary>
+      <div class="panel-body">
+        {% for group, items in kinds %}
+        <div class="kind-group">{{ group }}</div>
+        <div class="kind-picker">
+          {% for value, label in items %}
+          <a href="{% url 'dashboard:add' 'sections' %}?page={{ page.pk }}&kind={{ value }}&next={{ request.path|urlencode }}">{% icon value|kind_icon 18 %} {{ label }}</a>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
+  </div>
+
+  <!-- ============ page settings ============ -->
+  <div class="card panel">
+    <div class="panel-head"><h2>Page header & SEO</h2></div>
+    <div class="panel-body">
+      {% if page.page == 'home' %}<p class="kind-hint">On Home, the <strong>gradient part</strong> holds comma-separated words that rotate with a typing effect.</p>{% endif %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">{% for field in form %}{% include "dashboard/_field.html" with wide=1 %}{% endfor %}</div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save page</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

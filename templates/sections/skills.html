@@ -1,0 +1,15 @@
+{% extends "sections/_base.html" %}
+{% block body %}{% if tech_groups %}{% include "sections/_head.html" %}
+<div class="grid grid-3">
+  {% for group, techs in tech_groups.items %}
+  <div class="card skills reveal">
+    <h3>{{ group }}</h3>
+    {% for t in techs %}
+    <div class="skill">
+      <div class="skill-head"><span>{{ t.name }}</span><span>{{ t.proficiency }}%</span></div>
+      <div class="bar"><i style="--w: {{ t.proficiency }}%"></i></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>{% endif %}{% endblock %}

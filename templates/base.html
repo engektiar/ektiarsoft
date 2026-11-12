@@ -1,0 +1,179 @@
+{% load static ui %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site.meta_title }} | {{ site.owner_name }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site.meta_description }}{% endblock %}">
+  <meta name="keywords" content="{% block keywords %}{{ site.meta_keywords }}{% endblock %}">
+  <meta name="author" content="{{ site.owner_name }}">
+  <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
+  <meta name="theme-color" content="#07080d">
+
+  {# Open Graph / Twitter #}
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="{{ site.site_name }}">
+  <meta property="og:title" content="{% block og_title %}{{ site.meta_title }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ site.meta_description }}{% endblock %}">
+  <meta property="og:url" content="{{ canonical_url }}">
+  <meta property="og:image" content="{% block og_image %}{{ SITE_URL }}{% static 'img/og-image.svg' %}{% endblock %}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block tw_title %}{{ site.meta_title }}{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}{{ site.meta_description }}{% endblock %}">
+
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme");
+        if (!t) t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
+
+  {# Structured data: Person + ProfessionalService #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "{{ SITE_URL }}/#person",
+        "name": "{{ site.owner_name|escapejs }}",
+        "jobTitle": "{{ site.job_title|escapejs }}",{% if site.photo %}
+        "image": "{{ SITE_URL }}{{ site.photo.url }}",{% endif %}
+        "url": "{{ SITE_URL }}/",
+        "email": "mailto:{{ site.email }}",
+        "sameAs": [{% if site.github %}"{{ site.github }}"{% endif %}{% if site.linkedin %}{% if site.github %},{% endif %}"{{ site.linkedin }}"{% endif %}],
+        "knowsAbout": ["Web Application Development", "Python", "Django", "Android App Development", "SaaS", "SQL Databases", "Digital Marketing", "SEO"]
+      },
+      {
+        "@type": "ProfessionalService",
+        "@id": "{{ SITE_URL }}/#business",
+        "name": "{{ site.site_name|escapejs }}",
+        "description": "{{ site.meta_description|escapejs }}",
+        "url": "{{ SITE_URL }}/",
+        "logo": "{{ SITE_URL }}{% static 'img/logo.svg' %}",
+        "image": "{{ SITE_URL }}{% static 'img/og-image.svg' %}",
+        "founder":{"@id": "{{ SITE_URL }}/#person"},
+        "address": {"@type": "PostalAddress", "addressLocality": "{{ site.address|escapejs }}"},
+        "areaServed": "Worldwide"
+      }
+    ]
+  }
+  </script>
+  {% block schema %}{% endblock %}
+
+  {% if site.google_analytics_id and not debug %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics_id }}"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ site.google_analytics_id }}');</script>
+  {% endif %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a href="#main" class="sr-only">Skip to content</a>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  {% block header %}
+  <header class="site-header">
+    <nav class="container nav" aria-label="Main">
+      <a href="{% url 'core:home' %}" class="brand" aria-label="{{ site.site_name }} home">
+        {% include "partials/_logo.html" %}
+      </a>
+      {% with p=request.path %}
+      <ul class="nav-links">
+        {% for m in header_menu %}
+        <li><a href="{{ m.url }}"{% if m.new_tab %} target="_blank" rel="noopener"{% endif %} class="{% if m.url == '/' %}{% if p == '/' %}active{% endif %}{% elif m.url in p %}active{% endif %}">{{ m.label }}</a></li>
+        {% endfor %}
+        {% if user.is_authenticated %}
+          <li class="mobile-only"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        {% else %}
+          <li class="mobile-only"><a href="{% url 'accounts:login' %}">Client Login</a></li>
+        {% endif %}
+      </ul>
+      {% endwith %}
+      <div class="nav-actions">
+        <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle color theme">
+          <span class="sun">{% icon 'sun' 18 %}</span><span class="moon">{% icon 'moon' 18 %}</span>
+        </button>
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard:home' %}" class="btn btn-ghost btn-sm nav-cta">{% icon 'grid' 16 %} Dashboard</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-ghost btn-sm nav-cta">Login</a>
+        {% endif %}
+        {% if site.header_cta_text %}<a href="{{ site.header_cta_url|default:'/contact/' }}" class="btn btn-primary btn-sm nav-cta">{{ site.header_cta_text }}</a>{% endif %}
+        <button class="icon-btn menu-toggle" aria-label="Open menu" aria-expanded="false">{% icon 'menu' 20 %}</button>
+      </div>
+    </nav>
+  </header>
+  {% endblock %}
+
+  {% if messages %}
+  <div class="messages" role="status">
+    {% for m in messages %}<div class="alert alert-{{ m.tags }}">{% icon 'check' 18 %}<span>{{ m }}</span></div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <main id="main">{% block content %}{% endblock %}</main>
+
+  {% block footer %}
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="{% url 'core:home' %}" class="brand">{% include "partials/_logo.html" %}</a>
+          <p class="muted" style="margin-top:1rem;max-width:340px">{{ site.tagline }}</p>
+          <div class="socials">
+            {% if site.github %}<a class="icon-btn" href="{{ site.github }}" target="_blank" rel="noopener" aria-label="GitHub">{% icon 'github' 18 %}</a>{% endif %}
+            {% if site.linkedin %}<a class="icon-btn" href="{{ site.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn">{% icon 'linkedin' 18 %}</a>{% endif %}
+            {% if site.twitter %}<a class="icon-btn" href="{{ site.twitter }}" target="_blank" rel="noopener" aria-label="X / Twitter">{% icon 'twitter' 18 %}</a>{% endif %}
+            {% if site.facebook %}<a class="icon-btn" href="{{ site.facebook }}" target="_blank" rel="noopener" aria-label="Facebook">{% icon 'facebook' 18 %}</a>{% endif %}
+            {% if site.whatsapp %}<a class="icon-btn" href="https://wa.me/{{ site.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp">{% icon 'whatsapp' 18 %}</a>{% endif %}
+            <a class="icon-btn" href="mailto:{{ site.email }}" aria-label="Email">{% icon 'mail' 18 %}</a>
+          </div>
+        </div>
+        <div>
+          <h4>Services</h4>
+          <ul>{% for s in nav_services|slice:":5" %}<li><a href="{{ s.get_absolute_url }}">{{ s.title }}</a></li>{% endfor %}</ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>{% for m in footer_menu %}<li><a href="{{ m.url }}"{% if m.new_tab %} target="_blank" rel="noopener"{% endif %}>{{ m.label }}</a></li>{% endfor %}</ul>
+        </div>
+        <div>
+          <h4>Get in touch</h4>
+          <ul>
+            <li><a href="mailto:{{ site.email }}">{{ site.email }}</a></li>
+            {% if site.whatsapp %}<li><a href="https://wa.me/{{ site.whatsapp }}" target="_blank" rel="noopener">WhatsApp: {{ site.whatsapp|wa_display }}</a></li>{% endif %}
+            {% if site.phone %}<li><a href="tel:{{ site.phone }}">{{ site.phone }}</a></li>{% endif %}
+            <li class="muted">{{ site.address }}</li>
+            <li><a href="{% url 'accounts:register' %}">Open a client account →</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© {% now "Y" %} {{ site.owner_name }} · {{ site.site_name }}. All rights reserved.</span>
+        <span class="mono">{{ site.footer_note }}</span>
+      </div>
+    </div>
+  </footer>
+  <button class="icon-btn to-top{% if site.whatsapp %} has-wa{% endif %}" aria-label="Back to top">{% icon 'arrow' 18 %}</button>
+  {% if site.whatsapp %}
+  <a class="wa-float" href="https://wa.me/{{ site.whatsapp }}?text={{ 'Hi! I found you on '|add:site.site_name|add:' and would like to discuss a project.'|urlencode }}"
+     target="_blank" rel="noopener" aria-label="Chat on WhatsApp ({{ site.whatsapp|wa_display }})">
+    {% icon 'whatsapp' 28 %}<span class="wa-tip">Chat on WhatsApp</span>
+  </a>
+  {% endif %}
+  {% endblock %}
+
+  <script src="{% static 'js/main.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

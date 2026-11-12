@@ -1,0 +1,8 @@
+{% if technologies %}
+<div class="marquee" aria-label="Technologies" id="section-{{ section.pk }}">
+  <div class="marquee-track">
+    {% for t in technologies %}<span class="marquee-item">{{ t.name }}</span>{% endfor %}
+    {% for t in technologies %}<span class="marquee-item" aria-hidden="true">{{ t.name }}</span>{% endfor %}
+  </div>
+</div>
+{% endif %}

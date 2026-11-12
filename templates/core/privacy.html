@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy | {{ site.site_name }}{% endblock %}
+{% block description %}How {{ site.site_name }} collects, uses and protects your personal information.{% endblock %}
+{% block content %}
+{% include "partials/_page_hero.html" with current="privacy policy" eyebrow="Legal" heading="Privacy Policy" %}
+<section class="section" style="padding-top:0">
+  <div class="container article prose">
+    <p><em>Template — review and adapt this policy to your business and jurisdiction before publishing.</em></p>
+    <h2>Information we collect</h2>
+    <p>When you use the contact form or create a client account, we collect the details you provide — such as your name, email address, phone number and project information.</p>
+    <h2>How we use it</h2>
+    <p>Your information is used only to respond to your inquiries, deliver our services, and manage your client account. We do not sell your personal data.</p>
+    <h2>Cookies & analytics</h2>
+    <p>This site uses essential cookies for security and sign-in, and may use privacy-friendly analytics to understand how visitors use the site.</p>
+    <h2>Your rights</h2>
+    <p>You can request access to, correction of, or deletion of your personal data at any time by contacting <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+  </div>
+</section>
+{% endblock %}

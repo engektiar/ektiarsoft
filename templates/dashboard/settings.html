@@ -1,0 +1,15 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}Site settings{% endblock %}
+{% block heading %}Site settings{% endblock %}
+{% block dash %}
+<div class="card panel form-card">
+  <div class="panel-head"><h2>Brand, contact & SEO</h2><a href="{% url 'core:home' %}" target="_blank" class="btn btn-ghost btn-sm">{% icon 'external' 16 %} Preview site</a></div>
+  <div class="panel-body">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="form-grid">{% for field in form %}{% include "dashboard/_field.html" %}{% endfor %}</div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save settings</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<div class="faq">
+  {% for f in faqs %}
+  <details class="reveal" {% if forloop.first %}open{% endif %}>
+    <summary>{{ f.question }}</summary>
+    <div class="answer">{{ f.answer|linebreaks }}</div>
+  </details>
+  {% endfor %}
+</div>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{% for f in faqs %}{"@type":"Question","name":"{{ f.question|escapejs }}","acceptedAnswer":{"@type":"Answer","text":"{{ f.answer|escapejs }}"}}{% if not forloop.last %},{% endif %}{% endfor %}]}
+</script>

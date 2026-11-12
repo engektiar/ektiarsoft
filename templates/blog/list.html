@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui sections %}
+{% block title %}{% if page.meta_title and not category and not tag %}{{ page.meta_title }} | {{ site.site_name }}{% else %}{% if category %}{{ category.name }} Articles{% elif tag %}Posts tagged “{{ tag }}”{% else %}Blog — Software Development & Digital Marketing Insights{% endif %} | {{ site.site_name }}{% endif %}{% endblock %}
+{% block description %}{% if page.meta_description and not category and not tag %}{{ page.meta_description }}{% else %}{% if category.description %}{{ category.description }}{% else %}Practical articles on web development, Django, SaaS, Android apps, SEO and digital marketing by {{ site.owner_name }}.{% endif %}{% endif %}{% endblock %}
+{% block robots %}{% if q or page_obj.number > 1 %}noindex, follow{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if category %}{% url 'blog:list' as blog_url %}
+  {% include "partials/_page_hero.html" with crumb_url=blog_url crumb_label="blog" current=category.name eyebrow="Category" heading=category.name lead=category.description %}
+{% elif page.show_hero %}
+  {% include "partials/_page_hero.html" with current=page.title %}
+{% endif %}
+
+{% for s in sections %}{% render_section s %}{% endfor %}
+{% endblock %}

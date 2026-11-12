@@ -1,0 +1,18 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}Delete {{ res.opts.verbose_name }}{% endblock %}
+{% block heading %}Confirm delete{% endblock %}
+{% block dash %}
+<div class="card panel form-card" style="max-width:560px">
+  <div class="panel-body">
+    <div class="card-icon" style="color:var(--danger)">{% icon 'trash' 24 %}</div>
+    <h2 style="font-size:1.3rem">Delete “{{ obj }}”?</h2>
+    <p class="muted">This permanently removes this {{ res.opts.verbose_name }}. This action cannot be undone.</p>
+    <form method="post" class="form-actions" style="justify-content:flex-start">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ back }}">
+      <a href="{{ back }}" class="btn btn-ghost">Cancel</a>
+      <button class="btn btn-danger" type="submit">Yes, delete</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

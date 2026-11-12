@@ -1,0 +1,88 @@
+{% extends "sections/_base.html" %}{% load ui %}
+{% block body %}
+<div class="contact-grid">
+  <aside class="card reveal">
+    <h3>Contact details</h3>
+    <div class="contact-item"><span class="card-icon">{% icon 'mail' 20 %}</span><div><small>Email</small><a href="mailto:{{ site.email }}">{{ site.email }}</a></div></div>
+    {% if site.phone %}<div class="contact-item"><span class="card-icon">{% icon 'phone' 20 %}</span><div><small>Phone</small><a href="tel:{{ site.phone }}">{{ site.phone }}</a></div></div>{% endif %}
+    {% if site.whatsapp %}<div class="contact-item"><span class="card-icon">{% icon 'whatsapp' 20 %}</span><div><small>WhatsApp</small><a href="https://wa.me/{{ site.whatsapp }}" target="_blank" rel="noopener">{{ site.whatsapp|wa_display }}</a></div></div>{% endif %}
+    <div class="contact-item"><span class="card-icon">{% icon 'pin' 20 %}</span><div><small>Location</small>{{ site.address }} · Working worldwide</div></div>
+    {% if site.response_time %}<div class="contact-item"><span class="card-icon">{% icon 'clock' 20 %}</span><div><small>Response time</small>{{ site.response_time }}</div></div>{% endif %}
+    {% if section.rows %}
+    <h3 style="margin-top:1.8rem">What happens next?</h3>
+    <ol class="next-steps">
+      {% for r in section.rows %}<li><strong>{{ r.0 }}</strong>{% if r.1 %}<span>{{ r.1 }}</span>{% endif %}</li>{% endfor %}
+    </ol>
+    {% endif %}
+  </aside>
+
+  <form method="post" action="{% url 'core:contact' %}" class="card contact-form reveal reveal-d1" novalidate data-contact>
+    {% csrf_token %}
+    {{ form.website }}
+    <div class="cf-head">
+      <div>
+        <h2>{{ section.title|default:"Send a message" }}</h2>
+        {% if section.subtitle %}<p>{{ section.subtitle }}</p>{% endif %}
+      </div>
+      {% if site.available_for_work %}<span class="live"><span class="dot"></span> Available now</span>{% endif %}
+    </div>
+
+    {% if form.errors %}<div class="form-alert">{% icon 'alert' 18 %}<span>Please check the highlighted fields and try again.</span></div>{% endif %}
+
+    <div class="af-grid">
+      {% include "accounts/_af.html" with field=form.name %}
+      {% include "accounts/_af.html" with field=form.email %}
+      <div class="full">
+        <span class="cf-label">What do you need? <small>(pick one, it fills the subject)</small></span>
+        <div class="choice-group">
+          <button type="button" class="chip" data-subject="Web application project">{% icon 'web' 16 %} Web App</button>
+          <button type="button" class="chip" data-subject="SaaS product development">{% icon 'cloud' 16 %} SaaS</button>
+          <button type="button" class="chip" data-subject="Android app development">{% icon 'mobile' 16 %} Android App</button>
+          <button type="button" class="chip" data-subject="Digital marketing & SEO">{% icon 'chart' 16 %} Marketing / SEO</button>
+          <button type="button" class="chip" data-subject="UI/UX & website design">{% icon 'design' 16 %} Design</button>
+          <button type="button" class="chip" data-subject="General inquiry">{% icon 'help' 16 %} Other</button>
+        </div>
+      </div>
+      {% include "accounts/_af.html" with field=form.subject %}
+      {% include "accounts/_af.html" with field=form.phone %}
+      <div class="full">
+        <span class="cf-label">Estimated budget <small>(optional)</small></span>
+        <div class="choice-group" role="radiogroup" aria-label="Estimated budget">
+          {% for radio in form.budget %}<label class="choice">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+        </div>
+      </div>
+      {% include "accounts/_af.html" with field=form.message full=1 counter=1 %}
+      <div class="full cf-submit">
+        <button type="submit" class="btn btn-primary" data-loading="Sending…"><span>Send message</span> {% icon 'arrow' 18 'icon-arrow' %}</button>
+        <span class="note">{% icon 'lock' 14 %} Your details stay private — no spam, ever.</span>
+      </div>
+    </div>
+  </form>
+</div>
+<script>
+  (function () {
+    var form = document.currentScript.parentElement.querySelector("[data-contact]"); if (!form) return;
+    var subject = form.querySelector("[name=subject]"), chips = form.querySelectorAll("[data-subject]");
+    var chipValues = Array.prototype.map.call(chips, function (c) { return c.dataset.subject; });
+    function syncChips() { chips.forEach(function (c) { c.classList.toggle("active", c.dataset.subject === subject.value); }); }
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        if (!subject.value || chipValues.indexOf(subject.value) !== -1 || subject.value.indexOf("Inquiry:") === 0) subject.value = chip.dataset.subject;
+        syncChips(); subject.classList.remove("is-invalid");
+      });
+    });
+    subject.addEventListener("input", syncChips);
+    var p = new URLSearchParams(location.search);
+    if (!subject.value) { var v = p.get("service") || (p.get("plan") ? p.get("plan") + " plan" : ""); if (v) subject.value = "Inquiry: " + v; }
+    syncChips();
+    form.querySelectorAll("[data-count-for]").forEach(function (out) {
+      var ta = document.getElementById(out.dataset.countFor), upd = function () { out.textContent = ta.value.length; };
+      ta.addEventListener("input", upd); upd();
+    });
+    form.querySelectorAll(".input").forEach(function (i) { i.addEventListener("input", function () { i.classList.remove("is-invalid"); }); });
+    form.addEventListener("submit", function () {
+      var b = form.querySelector("[type=submit]"); b.disabled = true; b.querySelector("span").textContent = b.dataset.loading;
+    });
+  })();
+</script>
+{% endblock %}

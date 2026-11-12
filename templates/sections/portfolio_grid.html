@@ -1,0 +1,10 @@
+{% extends "sections/_base.html" %}
+{% block body %}{% include "sections/_head.html" %}
+<div class="filters" role="group" aria-label="Filter projects">
+  <button class="filter-btn active" data-filter="all">All</button>
+  {% for key, label in categories %}<button class="filter-btn" data-filter="{{ key }}">{{ label }}</button>{% endfor %}
+</div>
+<div class="grid grid-3">
+  {% for project in projects %}{% include "partials/_project_card.html" %}
+  {% empty %}<p class="muted">Projects are coming soon.</p>{% endfor %}
+</div>{% endblock %}

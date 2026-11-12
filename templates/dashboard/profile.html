@@ -1,0 +1,16 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}My profile{% endblock %}
+{% block heading %}My profile{% endblock %}
+{% block dash %}
+<div class="card panel form-card">
+  <div class="panel-head"><h2>Account details</h2><a href="{% url 'accounts:password_change' %}" class="btn btn-ghost btn-sm">{% icon 'shield' 16 %} Change password</a></div>
+  <div class="panel-body">
+    <dl class="readonly-grid"><dt>Username</dt><dd>{{ user.username }}</dd><dt>Role</dt><dd>{{ user.role.name|default:"—" }}</dd><dt>Member since</dt><dd>{{ user.date_joined|date:"M d, Y" }}</dd></dl>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="form-grid">{% for field in form %}{% include "dashboard/_field.html" %}{% endfor %}</div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save profile</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% load ui %}{% if section.eyebrow or section.title or section.highlight or section.subtitle %}
+<div class="{% if section.button_text and section.button_url not in hidden_urls %}head-row{% endif %}">
+  <div class="section-head{% if not section.button_text or section.button_url in hidden_urls %} center{% endif %}">
+    {% if section.eyebrow %}<span class="eyebrow">{{ section.eyebrow }}</span>{% endif %}
+    {% if section.title or section.highlight %}<h2>{{ section.title }}{% if section.highlight %} <span class="grad-text">{{ section.highlight }}</span>{% endif %}{% if section.title_end %} {{ section.title_end }}{% endif %}</h2>{% endif %}
+    {% if section.subtitle %}<p>{{ section.subtitle }}</p>{% endif %}
+  </div>
+  {% if section.button_text and section.button_url not in hidden_urls %}<a href="{{ section.button_url|default:'#' }}" class="btn btn-ghost" style="margin-bottom:56px">{{ section.button_text }} {% icon 'arrow' 16 'icon-arrow' %}</a>{% endif %}
+</div>
+{% endif %}

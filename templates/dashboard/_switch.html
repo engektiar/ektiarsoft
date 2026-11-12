@@ -1,0 +1,10 @@
+{% load ui %}<form method="post" action="{% url 'dashboard:toggle' key pk field %}" class="switch-form" data-switch>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <button type="submit" class="switch {% if value %}on{% endif %}" role="switch" aria-checked="{% if value %}true{% else %}false{% endif %}"
+          data-on="{{ field|switch_on }}" data-off="{{ field|switch_off }}"
+          {% if locked %}disabled title="{{ locked }}"{% endif %}>
+    <span class="knob"></span>
+    <span class="switch-label">{% if value %}{{ field|switch_on }}{% else %}{{ field|switch_off }}{% endif %}</span>
+  </button>
+</form>

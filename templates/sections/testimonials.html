@@ -1,0 +1,11 @@
+{% extends "sections/_base.html" %}
+{% block body %}{% if testimonials %}{% include "sections/_head.html" %}
+<div class="grid grid-3">
+  {% for t in testimonials %}
+  <figure class="card quote-card reveal" style="margin:0">
+    <div class="stars" aria-label="{{ t.rating }} out of 5">{% for i in "12345" %}{% if forloop.counter <= t.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</div>
+    <blockquote>&ldquo;{{ t.quote }}&rdquo;</blockquote>
+    <figcaption class="person"><span class="person-avatar">{{ t.name|slice:":1" }}</span><span>{{ t.name }}<small>{{ t.position }}{% if t.company %}, {{ t.company }}{% endif %}</small></span></figcaption>
+  </figure>
+  {% endfor %}
+</div>{% endif %}{% endblock %}

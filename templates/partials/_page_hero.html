@@ -1,0 +1,27 @@
+<section class="page-hero">
+  <div class="blob blob-1" aria-hidden="true"></div>
+  <div class="container">
+    <ol class="breadcrumbs" aria-label="Breadcrumb">
+      <li><a href="{% url 'core:home' %}">home</a></li>
+      {% if crumb_url %}<li><a href="{{ crumb_url }}">{{ crumb_label }}</a></li>{% endif %}
+      <li aria-current="page">{{ current|lower }}</li>
+    </ol>
+    {% if heading %}
+      {# explicit heading (detail pages: service, project, category) #}
+      <span class="eyebrow">{{ eyebrow }}</span>
+      <h1>{{ heading }}</h1>
+      {% if lead %}<p>{{ lead }}</p>{% endif %}
+    {% else %}
+      {# editable from Dashboard → Page Headings #}
+      {% if page.eyebrow %}<span class="eyebrow">{{ page.eyebrow }}</span>{% endif %}
+      <h1>{{ page.heading }}{% if page.highlight %} <span class="grad-text">{{ page.highlight }}</span>{% endif %}{% if page.heading_end %} {{ page.heading_end }}{% endif %}</h1>
+      {% firstof page.lead lead as hero_lead %}{% if hero_lead %}<p>{{ hero_lead }}</p>{% endif %}
+      {% if page.button_text or page.button2_text %}
+      <div class="hero-cta" style="margin:1.6rem 0 0">
+        {% if page.button_text %}<a href="{{ page.button_url|default:'#' }}" class="btn btn-primary">{{ page.button_text }}</a>{% endif %}
+        {% if page.button2_text %}<a href="{{ page.button2_url|default:'#' }}" class="btn btn-ghost">{{ page.button2_text }}</a>{% endif %}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>

@@ -1,0 +1,13 @@
+{% extends "sections/_base.html" %}{% load ui %}
+{% block body %}{% include "sections/_head.html" %}
+<div class="grid grid-3">
+  {% for s in services %}
+  <article class="card card-spot reveal">
+    <div class="card-icon">{% icon s.icon 26 %}</div>
+    <h3>{{ s.title }}</h3>
+    <p>{{ s.short_description }}</p>
+    {% if section.show_details %}<ul class="check-list">{% for f in s.feature_list|slice:":4" %}<li>{% icon 'check' 16 %}<span>{{ f }}</span></li>{% endfor %}</ul>{% endif %}
+    <a href="{{ s.get_absolute_url }}" class="card-link">Learn more {% icon 'arrow' 16 %}</a>
+  </article>
+  {% endfor %}
+</div>{% endblock %}

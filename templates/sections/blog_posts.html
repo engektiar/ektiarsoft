@@ -1,0 +1,3 @@
+{% extends "sections/_base.html" %}
+{% block body %}{% if posts %}{% include "sections/_head.html" %}
+<div class="grid grid-3">{% for post in posts %}{% include "partials/_post_card.html" %}{% endfor %}</div>{% endif %}{% endblock %}

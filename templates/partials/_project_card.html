@@ -1,0 +1,15 @@
+{% load ui %}<article class="card card-spot project-card reveal" data-category="{{ project.category }}">
+  <a href="{{ project.get_absolute_url }}" class="project-thumb" aria-label="{{ project.title }}">
+    {% if project.image %}
+      <img src="{{ project.image.url }}" alt="{{ project.title }} — {{ project.get_category_display }} project" loading="lazy" width="640" height="400">
+    {% else %}
+      <div class="thumb-placeholder"><span>{{ project.title|slice:":2"|upper }}</span></div>
+    {% endif %}
+    <span class="pill pill-primary thumb-cat">{{ project.get_category_display }}</span>
+  </a>
+  <div class="project-body">
+    <h3><a href="{{ project.get_absolute_url }}">{{ project.title }}</a></h3>
+    <p>{{ project.summary }}</p>
+    <div class="tags">{% for t in project.stack_list|slice:":5" %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+  </div>
+</article>

@@ -1,0 +1,7 @@
+{% load ui %}{% with parts=site.site_name|brand_split %}<span class="logo-mark" aria-hidden="true">
+  <svg viewBox="0 0 40 40" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M29 10H11v20h18"/>
+    <path d="M11 20h9"/>
+    <rect class="logo-cursor" x="24.5" y="17.5" width="5" height="5" rx="1.2" fill="#34f5a4" stroke="none"/>
+  </svg>
+</span><span class="logo-word">{{ parts.0 }}<span class="grad-text">{{ parts.1 }}</span></span>{% endwith %}

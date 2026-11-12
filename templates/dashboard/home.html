@@ -1,0 +1,59 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}Overview{% endblock %}
+{% block heading %}Overview{% endblock %}
+{% block dash %}
+<div class="card welcome">
+  <h2 style="font-size:1.6rem">Welcome back, {{ user.first_name|default:user.username }} 👋</h2>
+  <p class="muted" style="margin:0">You're signed in as <strong>{{ user.role.name|default:"a user without a role" }}</strong>.
+  {% if is_staff_view %}Here's what's happening across your studio today.{% else %}Submit a new project request or track existing ones below.{% endif %}</p>
+</div>
+
+{% if is_staff_view %}
+<div class="stats">
+  <div class="card stat"><div class="card-icon">{% icon 'users' 22 %}</div><div><strong>{{ stat_users }}</strong><span>Users</span></div></div>
+  <div class="card stat"><div class="card-icon">{% icon 'inbox' 22 %}</div><div><strong>{{ stat_requests }}</strong><span>Open requests</span></div></div>
+  <div class="card stat"><div class="card-icon">{% icon 'mail' 22 %}</div><div><strong>{{ stat_unread }}</strong><span>Unread messages</span></div></div>
+  <div class="card stat"><div class="card-icon">{% icon 'grid' 22 %}</div><div><strong>{{ stat_projects }}</strong><span>Projects</span></div></div>
+  <div class="card stat"><div class="card-icon">{% icon 'pen' 22 %}</div><div><strong>{{ stat_posts }}</strong><span>Blog posts</span></div></div>
+</div>
+
+<div class="dash-grid-2">
+  <div class="card panel">
+    <div class="panel-head"><h2>Latest client requests</h2><a href="{% url 'dashboard:requests' %}" class="btn btn-ghost btn-sm">View all</a></div>
+    <ul class="list-plain">
+      {% for r in recent_requests %}
+      <li><a href="{% url 'dashboard:request_detail' r.pk %}"><strong>{{ r.title }}</strong><br><small>{{ r.client.display_name }} · {{ r.created_at|timesince }} ago</small></a><span class="status status-{{ r.status }}">{{ r.get_status_display }}</span></li>
+      {% empty %}<li class="muted">No requests yet.</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="card panel">
+    <div class="panel-head"><h2>Recent messages</h2>{% if perms.core.view_contactmessage %}<a href="{% url 'dashboard:list' 'messages' %}" class="btn btn-ghost btn-sm">Inbox</a>{% endif %}</div>
+    <ul class="list-plain">
+      {% for m in recent_messages %}
+      <li><a href="{% url 'dashboard:edit' 'messages' m.pk %}"><strong>{{ m.subject }}</strong><br><small>{{ m.name }} · {{ m.created_at|timesince }} ago</small></a>{% if not m.is_read %}<span class="status status-new">New</span>{% endif %}</li>
+      {% empty %}<li class="muted">No messages yet.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card panel" style="margin-top:20px">
+  <div class="panel-head"><h2>Roles</h2>{% if perms.accounts.manage_roles %}<a href="{% url 'dashboard:add' 'roles' %}" class="btn btn-primary btn-sm">{% icon 'plus' 16 %} New role</a>{% endif %}</div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Role</th><th>Description</th><th>Users</th><th>Default</th></tr></thead>
+    <tbody>{% for r in roles %}<tr><td><strong>{{ r.name }}</strong></td><td class="muted">{{ r.description }}</td><td>{{ r.users.count }}</td><td>{% if r.is_default %}<span class="status status-yes">Default</span>{% endif %}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+
+{% else %}
+<div class="card panel">
+  <div class="panel-head"><h2>My recent requests</h2>
+    {% if perms.core.add_servicerequest %}<a href="{% url 'dashboard:request_create' %}" class="btn btn-primary btn-sm">{% icon 'plus' 16 %} New request</a>{% endif %}
+  </div>
+  <ul class="list-plain">
+    {% for r in my_requests %}
+    <li><a href="{% url 'dashboard:request_detail' r.pk %}"><strong>{{ r.title }}</strong><br><small>Submitted {{ r.created_at|date:"M d, Y" }}</small></a><span class="status status-{{ r.status }}">{{ r.get_status_display }}</span></li>
+    {% empty %}<li><span class="muted">No requests yet — tell me about your project and I'll reply with a plan and quote.</span></li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

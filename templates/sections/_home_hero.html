@@ -1,0 +1,59 @@
+{% load ui %}<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="blob blob-1" aria-hidden="true"></div>
+  <div class="blob blob-2" aria-hidden="true"></div>
+  <div class="container hero-grid">
+    <div>
+      {% if site.available_for_work and page.eyebrow %}
+      <span class="badge reveal"><span class="dot"></span> {{ page.eyebrow }}</span>
+      {% endif %}
+      {% with words=page.typed_words %}
+      <h1 class="reveal reveal-d1">
+        {{ page.heading }}{% if words %} <span class="grad-text typed" data-typed="{{ words|jsonify }}">{{ words.0 }}</span><span class="caret" aria-hidden="true"></span>{% endif %}{% if page.heading_end %}<br>
+        {{ page.heading_end }}{% endif %}
+      </h1>
+      {% endwith %}
+      <p class="hero-lead reveal reveal-d2">
+        {% if page.lead %}{{ page.lead }}{% else %}
+        Hi, I'm <strong>{{ site.owner_name }}</strong> — a {{ site.job_title|lower }} with
+        <strong>{{ site.years_experience }}+ years</strong> of experience. {{ site.tagline }}{% endif %}
+      </p>
+      {% if page.button_text or page.button2_text %}
+      <div class="hero-cta reveal reveal-d3">
+        {% if page.button_text %}<a href="{{ page.button_url|default:'#' }}" class="btn btn-primary">{{ page.button_text }} {% icon 'arrow' 18 'icon-arrow' %}</a>{% endif %}
+        {% if page.button2_text %}<a href="{{ page.button2_url|default:'#' }}" class="btn btn-ghost">{% icon 'briefcase' 18 %} {{ page.button2_text }}</a>{% endif %}
+      </div>
+      {% endif %}
+      <div class="hero-stats reveal reveal-d3">
+        <div><strong><span data-count="{{ site.years_experience }}">{{ site.years_experience }}</span>+</strong><span>Years experience</span></div>
+        {% if stats.projects %}<div><strong><span data-count="{{ stats.projects }}">{{ stats.projects }}</span></strong><span>Projects showcased</span></div>{% endif %}
+        {% if stats.technologies %}<div><strong><span data-count="{{ stats.technologies }}">{{ stats.technologies }}</span>+</strong><span>Technologies</span></div>{% endif %}
+        {% if stats.services %}<div><strong><span data-count="{{ stats.services }}">{{ stats.services }}</span></strong><span>Core services</span></div>{% endif %}
+      </div>
+    </div>
+
+    <div class="hero-visual reveal reveal-d2" aria-hidden="true">
+      <div class="code-window">
+        <div class="code-bar"><i></i><i></i><i></i><span>developer.py</span></div>
+<div class="code-body"><span class="tk-k">class</span> <span class="tk-f">Developer</span>:
+    <span class="tk-c"># {{ site.owner_name }} — {{ site.site_name }}</span>
+    name    = <span class="tk-s">"{{ site.owner_name }}"</span>
+    years   = <span class="tk-n">{{ site.years_experience }}</span>
+    stack   = [<span class="tk-s">"Python"</span>, <span class="tk-s">"Django"</span>,
+               <span class="tk-s">"SQL"</span>, <span class="tk-s">"JavaScript"</span>,
+               <span class="tk-s">"Kotlin"</span>, <span class="tk-s">"Cloud"</span>]
+    builds  = {
+        <span class="tk-s">"web"</span>:       <span class="tk-k">True</span>,
+        <span class="tk-s">"saas"</span>:      <span class="tk-k">True</span>,
+        <span class="tk-s">"android"</span>:   <span class="tk-k">True</span>,
+        <span class="tk-s">"marketing"</span>: <span class="tk-k">True</span>,
+    }
+
+    <span class="tk-k">def</span> <span class="tk-f">solve</span>(<span class="tk-p">self</span>, idea):
+        <span class="tk-k">return</span> <span class="tk-p">self</span>.ship(idea, quality=<span class="tk-s">"production"</span>)</div>
+      </div>
+      <div class="floating-chip chip-1">{% icon 'zap' 16 %} Fast · Secure · SEO-ready</div>
+      <div class="floating-chip chip-2">{% icon 'check' 16 %} Clean, tested code</div>
+    </div>
+  </div>
+</section>

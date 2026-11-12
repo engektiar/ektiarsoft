@@ -1,0 +1,13 @@
+{% load ui %}<section class="section" id="section-{{ section.pk }}" {% if section.style == 'tight' %}style="padding-top:0"{% endif %}>
+  <div class="container">
+    <div class="cta-box reveal">
+      {% if section.eyebrow %}<span class="eyebrow">{{ section.eyebrow }}</span>{% endif %}
+      <h2>{{ section.title }}{% if section.highlight %} <span class="grad-text">{{ section.highlight }}</span>{% endif %}{% if section.title_end %} {{ section.title_end }}{% endif %}</h2>
+      {% if section.subtitle %}<p>{{ section.subtitle }}</p>{% endif %}
+      <div class="hero-cta" style="justify-content:center;margin:0">
+        {% if section.button_text and section.button_url not in hidden_urls %}<a href="{{ section.button_url|default:'#' }}" class="btn btn-primary">{{ section.button_text }} {% icon 'arrow' 18 'icon-arrow' %}</a>{% endif %}
+        {% if section.button2_text and section.button2_url not in hidden_urls %}<a href="{{ section.button2_url|default:'#' }}" class="btn btn-ghost">{{ section.button2_text }}</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>

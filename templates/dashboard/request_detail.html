@@ -1,0 +1,38 @@
+{% extends "dashboard/base.html" %}{% load ui %}
+{% block page_title %}{{ sr.title }}{% endblock %}
+{% block heading %}Request #{{ sr.pk }}{% endblock %}
+{% block dash %}
+<div class="dash-grid-2" style="align-items:start">
+  <div class="card panel">
+    <div class="panel-head"><h2>{{ sr.title }}</h2><span class="status status-{{ sr.status }}">{{ sr.get_status_display }}</span></div>
+    <div class="panel-body">
+      <dl class="readonly-grid">
+        <dt>Client</dt><dd>{{ sr.client.display_name }} ({{ sr.client.email }})</dd>
+        <dt>Service</dt><dd>{{ sr.service|default:"—" }}</dd>
+        <dt>Budget</dt><dd>{{ sr.budget|default:"—" }}</dd>
+        <dt>Deadline</dt><dd>{{ sr.deadline|date:"M d, Y"|default:"—" }}</dd>
+        <dt>Submitted</dt><dd>{{ sr.created_at|date:"M d, Y H:i" }}</dd>
+        <dt>Last update</dt><dd>{{ sr.updated_at|timesince }} ago</dd>
+      </dl>
+      <h3 style="font-size:1rem">Description</h3>
+      <p class="muted" style="white-space:pre-wrap">{{ sr.description }}</p>
+      {% if sr.admin_note and not form %}
+      <div class="card" style="margin-top:1rem"><h3 style="font-size:1rem">Note from {{ site.owner_name }}</h3><p style="white-space:pre-wrap;margin:0">{{ sr.admin_note }}</p></div>
+      {% endif %}
+    </div>
+  </div>
+  {% if form %}
+  <div class="card panel">
+    <div class="panel-head"><h2>Update status</h2></div>
+    <div class="panel-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">{% for field in form %}{% include "dashboard/_field.html" with wide=1 %}{% endfor %}</div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">{% icon 'check' 16 %} Save</button></div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<p style="margin-top:20px"><a href="{% url 'dashboard:requests' %}" class="btn btn-ghost btn-sm">← All requests</a></p>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ post.seo_title }} | {{ site.site_name }}{% endblock %}
+{% block description %}{{ post.seo_description }}{% endblock %}
+{% block keywords %}{{ post.tags }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ post.seo_title }}{% endblock %}
+{% block og_description %}{{ post.seo_description }}{% endblock %}
+{% block tw_title %}{{ post.seo_title }}{% endblock %}
+{% block tw_description %}{{ post.seo_description }}{% endblock %}
+{% block og_image %}{% if post.cover %}{{ SITE_URL }}{{ post.cover.url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block schema %}
+<meta property="article:published_time" content="{{ post.published_at|date:'c' }}">
+<meta property="article:modified_time" content="{{ post.updated_at|date:'c' }}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ post.title|escapejs }}",
+  "description": "{{ post.seo_description|escapejs }}",
+  "datePublished": "{{ post.published_at|date:'c' }}",
+  "dateModified": "{{ post.updated_at|date:'c' }}",
+  "author": {"@id": "{{ SITE_URL }}/#person"},
+  "publisher": {"@id": "{{ SITE_URL }}/#business"},
+  "mainEntityOfPage": "{{ canonical_url }}",
+  "keywords": "{{ post.tags|escapejs }}"{% if post.cover %},
+  "image": "{{ SITE_URL }}{{ post.cover.url }}"{% endif %}
+}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+{"@type":"ListItem","position":1,"name":"Home","item":"{{ SITE_URL }}/"},
+{"@type":"ListItem","position":2,"name":"Blog","item":"{{ SITE_URL }}{% url 'blog:list' %}"},
+{"@type":"ListItem","position":3,"name":"{{ post.title|escapejs }}","item":"{{ canonical_url }}"}]}
+</script>
+{% endblock %}
+
+{% block content %}
+<article>
+  <header class="page-hero">
+    <div class="blob blob-1" aria-hidden="true"></div>
+    <div class="container article">
+      <ol class="breadcrumbs" aria-label="Breadcrumb">
+        <li><a href="{% url 'core:home' %}">home</a></li>
+        <li><a href="{% url 'blog:list' %}">blog</a></li>
+        {% if post.category %}<li><a href="{{ post.category.get_absolute_url }}">{{ post.category.name|lower }}</a></li>{% endif %}
+      </ol>
+      <h1 style="font-size:clamp(2rem,5vw,3.2rem)">{{ post.title }}</h1>
+      <div class="post-meta" style="font-size:.9rem">
+        <span>By {{ post.author.display_name|default:site.owner_name }}</span>
+        <time datetime="{{ post.published_at|date:'c' }}">{{ post.published_at|date:"F d, Y" }}</time>
+        <span>{{ post.reading_time }} min read</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container article" style="padding-bottom:80px">
+    {% if post.cover %}<figure class="cover"><img src="{{ post.cover.url }}" alt="{{ post.title }}" width="1200" height="630"></figure>{% endif %}
+    <div class="prose">{{ post.body|safe }}</div>
+    {% if post.tag_list %}
+    <div class="tags" style="margin-top:2.5rem">{% for t in post.tag_list %}<a class="tag" href="{% url 'blog:tag' t %}">#{{ t }}</a>{% endfor %}</div>
+    {% endif %}
+    <div class="card" style="margin-top:3rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+      {% if site.photo %}<img src="{{ site.photo.url }}" alt="{{ site.owner_name }}" class="author-photo" width="56" height="56" loading="lazy">
+      {% else %}<span class="person-avatar" style="width:56px;height:56px;font-size:1.3rem">{{ site.owner_name|slice:":1" }}</span>{% endif %}
+      <div style="flex:1;min-width:220px"><strong>{{ site.owner_name }}</strong><p style="margin:0">{{ site.job_title }} · {{ site.years_experience }}+ years building web, SaaS and mobile products.</p></div>
+      <a href="{% url 'core:contact' %}" class="btn btn-primary btn-sm">Work with me</a>
+    </div>
+  </div>
+</article>
+
+{% if related %}
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Keep reading</span><h2>Related <span class="grad-text">articles.</span></h2></div>
+    <div class="grid grid-3">{% for post in related %}{% include "partials/_post_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

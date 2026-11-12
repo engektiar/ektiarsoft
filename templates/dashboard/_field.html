@@ -1,0 +1,18 @@
+{% load ui %}{% with wt=field|field_type %}
+<div data-field="{{ field.name }}" class="field {% if wt == 'Textarea' or wt == 'CheckboxSelectMultiple' or wide %}full{% endif %}">
+  {% if wt == 'CheckboxInput' %}
+    <label class="check-field" style="margin-top:1.6rem">{{ field }} {{ field.label }}</label>
+  {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+    {% if wt == 'ClearableFileInput' and field.value and field.value.url %}
+      <div class="file-preview">
+        {% if field.name in 'photo image cover avatar' %}<img src="{{ field.value.url }}" alt="Current {{ field.label|lower }}">{% endif %}
+        <a href="{{ field.value.url }}" target="_blank" rel="noopener">View current file</a>
+      </div>
+    {% endif %}
+    {{ field }}
+  {% endif %}
+  {% if field.help_text %}<p class="help">{{ field.help_text|safe }}</p>{% endif %}
+  {% if field.errors %}<p class="error">{{ field.errors|join:" " }}</p>{% endif %}
+</div>
+{% endwith %}

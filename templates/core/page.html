@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui sections %}
+{% block title %}{% if page.meta_title %}{{ page.meta_title }}{% if page.page != 'home' %} | {{ site.site_name }}{% endif %}{% elif page.page == 'home' %}{{ block.super }}{% else %}{{ page.title }} | {{ site.site_name }}{% endif %}{% endblock %}
+{% block description %}{% if page.meta_description %}{{ page.meta_description }}{% elif page.lead %}{{ page.lead|truncatechars:158 }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block content %}
+{% if page.show_hero %}
+  {% if page.page == 'home' %}{% include "sections/_home_hero.html" %}
+  {% elif page.page == 'about' %}{% include "partials/_page_hero.html" with current=page.title lead=site.tagline %}
+  {% else %}{% include "partials/_page_hero.html" with current=page.title %}{% endif %}
+{% endif %}
+
+{% for s in sections %}{% render_section s %}{% endfor %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "accounts/auth_base.html" %}{% load ui %}
+{% block title %}Sign in | {{ site.site_name }}{% endblock %}
+{% block aside_title %}Welcome back to <span class="grad-text">your workspace.</span>{% endblock %}
+
+{% block auth_form %}
+<h1>Sign in</h1>
+<p class="sub">Good to see you again. Pick up right where you left off.</p>
+
+<form method="post" novalidate data-auth>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-alert">{% icon 'alert' 18 %}<span>{{ form.non_field_errors|join:" " }}</span></div>{% endif %}
+  <div class="af-grid">
+    {% include "accounts/_af.html" with field=form.username full=1 %}
+    {% include "accounts/_af.html" with field=form.password full=1 %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="full">
+      <button class="btn btn-primary btn-block auth-submit" type="submit" data-loading="Signing in…"><span>Sign in</span> {% icon 'arrow' 18 'icon-arrow' %}</button>
+    </div>
+  </div>
+</form>
+<p class="switch-line">New here? <a href="{% url 'accounts:register' %}">Create a free account →</a></p>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}{% load static ui %}
+{% block title %}{% block page_title %}Dashboard{% endblock %} · {{ site.site_name }}{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="dash">
+  <aside class="sidebar" id="sidebar">
+    <a href="{% url 'core:home' %}" class="brand">{% include "partials/_logo.html" %}</a>
+    <a href="{% url 'dashboard:home' %}" class="side-link {% if section == 'home' %}active{% endif %}">{% icon 'home' 18 %} Overview</a>
+    {% if perms.core.view_servicerequest or perms.core.manage_servicerequest %}
+    <a href="{% url 'dashboard:requests' %}" class="side-link {% if section == 'requests' %}active{% endif %}">{% icon 'inbox' 18 %} {% if perms.core.manage_servicerequest %}Client Requests{% else %}My Requests{% endif %}</a>
+    {% endif %}
+    {% for group, items in nav_groups.items %}
+      <div class="side-group">{{ group }}</div>
+      {% for r in items %}
+      <a href="{% url 'dashboard:list' r.key %}" class="side-link {% if section == r.key %}active{% endif %}">{% icon r.icon 18 %} {{ r.label }}</a>
+      {% endfor %}
+    {% endfor %}
+    {% if perms.accounts.manage_site_settings %}
+      <div class="side-group">System</div>
+      <a href="{% url 'dashboard:settings' %}" class="side-link {% if section == 'settings' %}active{% endif %}">{% icon 'settings' 18 %} Site Settings</a>
+      {% if user.is_superuser %}<a href="{% url 'admin:index' %}" class="side-link">{% icon 'db' 18 %} Django Admin</a>{% endif %}
+    {% endif %}
+    <div class="side-foot">
+      <a href="{% url 'accounts:profile' %}" class="side-link {% if section == 'profile' %}active{% endif %}">{% icon 'user' 18 %} My Profile</a>
+      <a href="{% url 'core:home' %}" class="side-link">{% icon 'external' 18 %} View website</a>
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+        <button class="side-link side-link-btn">{% icon 'logout' 18 %} Sign out</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <button class="icon-btn dash-menu" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false" data-sidebar-toggle>{% icon 'menu' 18 %}</button>
+        <h1>{% block heading %}Dashboard{% endblock %}</h1>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme"><span class="sun">{% icon 'sun' 18 %}</span><span class="moon">{% icon 'moon' 18 %}</span></button>
+        <a href="{% url 'accounts:profile' %}" class="user-chip">
+          {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="">{% else %}<span class="person-avatar">{{ user.initials }}</span>{% endif %}
+          <span class="who">{{ user.display_name }}<small>{{ user.role.name|default:"No role" }}</small></span>
+        </a>
+      </div>
+    </header>
+    <div class="dash-content">{% block dash %}{% endblock %}</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Mobile sidebar: open with the menu button; close on outside tap, link tap or Escape */
+(function () {
+  var sb = document.getElementById("sidebar"), btn = document.querySelector("[data-sidebar-toggle]");
+  if (!sb || !btn) return;
+  function set(open) {
+    sb.classList.toggle("open", open);
+    btn.setAttribute("aria-expanded", open);
+    btn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  }
+  btn.addEventListener("click", function (e) { e.stopPropagation(); set(!sb.classList.contains("open")); });
+  document.addEventListener("click", function (e) {
+    if (sb.classList.contains("open") && !sb.contains(e.target)) set(false);
+  });
+  sb.addEventListener("click", function (e) { if (e.target.closest("a")) set(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") set(false); });
+})();
+
+/* Active / Inactive switches: save instantly with fetch, fall back to normal POST */
+document.addEventListener("submit", function (e) {
+  var form = e.target.closest("[data-switch]");
+  if (!form || !window.fetch) return;
+  e.preventDefault();
+  var btn = form.querySelector(".switch"), label = btn.querySelector(".switch-label");
+  btn.classList.add("busy");
+  fetch(form.action, { method: "POST", body: new FormData(form), headers: { "X-Requested-With": "fetch" } })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      btn.classList.remove("busy");
+      if (d.error) { alert(d.error); return; }
+      btn.classList.toggle("on", d.value);
+      btn.setAttribute("aria-checked", d.value);
+      label.textContent = d.value ? btn.dataset.on : btn.dataset.off;
+      var row = form.closest("[data-sec]"); if (row) row.classList.toggle("off", !d.value);
+    })
+    .catch(function () { btn.classList.remove("busy"); form.submit(); });
+});
+</script>
+{% block dash_js %}{% endblock %}
+{% endblock %}

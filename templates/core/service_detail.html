@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ service.title }} Services | {{ site.site_name }}{% endblock %}
+{% block description %}{% firstof service.meta_description service.short_description %}{% endblock %}
+{% block og_title %}{{ service.title }} — {{ site.site_name }}{% endblock %}
+{% block schema %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Service","name":"{{ service.title|escapejs }}","description":"{{ service.short_description|escapejs }}","provider":{"@id":"{{ SITE_URL }}/#business"},"areaServed":"Worldwide","url":"{{ canonical_url }}"}
+</script>
+{% endblock %}
+
+{% block content %}
+{% url 'core:services' as services_url %}
+{% include "partials/_page_hero.html" with crumb_url=services_url crumb_label="services" current=service.title eyebrow="Service" heading=service.title lead=service.short_description %}
+
+<section class="section" style="padding-top:0">
+  <div class="container split" style="align-items:start">
+    <div class="prose reveal">{{ service.body|linebreaks }}</div>
+    <aside class="card reveal reveal-d1">
+      <div class="card-icon">{% icon service.icon 26 %}</div>
+      <h3>What's included</h3>
+      <ul class="check-list">{% for f in service.feature_list %}<li>{% icon 'check' 16 %}<span>{{ f }}</span></li>{% endfor %}</ul>
+      <a href="{% url 'core:contact' %}?service={{ service.title|urlencode }}" class="btn btn-primary btn-block">Get a free quote {% icon 'arrow' 16 'icon-arrow' %}</a>
+    </aside>
+  </div>
+</section>
+
+{% if projects %}
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Recent work</span><h2>Related <span class="grad-text">projects.</span></h2></div>
+    <div class="grid grid-3">{% for project in projects %}{% include "partials/_project_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+
+{% if others %}
+<section class="section">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">Explore more</span><h2>Other <span class="grad-text">services.</span></h2></div>
+    <div class="grid grid-3">
+      {% for s in others %}
+      <a href="{{ s.get_absolute_url }}" class="card card-spot reveal"><div class="card-icon">{% icon s.icon 24 %}</div><h3>{{ s.title }}</h3><p>{{ s.short_description }}</p></a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% include "partials/_cta.html" %}
+{% endblock %}
