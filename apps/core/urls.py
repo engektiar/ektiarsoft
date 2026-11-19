@@ -15,5 +15,6 @@ urlpatterns = [
     path("contact/", views.contact, name="contact"),
     path("privacy-policy/", views.privacy, name="privacy"),
     path("image-to-text/", views.image_to_text, name="image_to_text"),
+    path("image-to-text/ai/", views.image_to_text_ai, name="image_to_text_ai"),
     path("<slug:slug>/", views.custom_page, name="custom_page"),
 ]

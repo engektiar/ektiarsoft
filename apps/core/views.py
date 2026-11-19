@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from .forms import ContactForm
 from .models import PageContent, Project, Service, Technology
@@ -77,11 +77,65 @@ def project_detail(request, slug):
     })
 
 
+def _ocr_remaining(user):
+    from django.utils import timezone
+
+    from . import ocr
+    from .models import OcrUsage
+
+    used = OcrUsage.objects.filter(user=user, day=timezone.localdate()).values_list("count", flat=True).first() or 0
+    return max(0, ocr.daily_limit() - used)
+
+
 @require_GET
 def image_to_text(request):
-    """Free OCR tool. Recognition runs entirely in the visitor's browser (Tesseract.js):
-    the image is never uploaded and nothing is stored."""
-    return render(request, "core/image_to_text.html")
+    """OCR tool. Free mode runs entirely in the visitor's browser (Tesseract.js).
+    AI mode (logged-in users) sends the image to Claude; nothing is stored either way."""
+    from . import ocr
+
+    ctx = {"ai_enabled": ocr.ai_enabled(), "ai_limit": ocr.daily_limit()}
+    if request.user.is_authenticated:
+        ctx["ai_remaining"] = _ocr_remaining(request.user)
+    return render(request, "core/image_to_text.html", ctx)
+
+
+@require_POST
+def image_to_text_ai(request):
+    """AI mode: JSON {"image": "data:image/jpeg;base64,..."} -> {"text": "..."}.
+    The image and the text are not stored; only today's usage count is."""
+    import base64
+    import binascii
+    import json
+
+    from django.db import transaction
+    from django.db.models import F
+    from django.http import JsonResponse
+    from django.utils import timezone
+
+    from . import ocr
+    from .models import OcrUsage
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Please log in to use AI mode."}, status=401)
+    if not ocr.ai_enabled():
+        return JsonResponse({"error": "AI mode is not set up yet."}, status=503)
+    if _ocr_remaining(request.user) <= 0:
+        return JsonResponse({"error": f"Daily AI limit reached ({ocr.daily_limit()}). Try again tomorrow."}, status=429)
+    try:
+        payload = json.loads(request.body or b"{}")
+        header, b64 = payload["image"].split(",", 1)
+        media_type = header.split(";")[0].removeprefix("data:")
+        data = base64.b64decode(b64, validate=True)
+    except (ValueError, KeyError, AttributeError, binascii.Error):
+        return JsonResponse({"error": "Invalid image data."}, status=400)
+    try:
+        text = ocr.transcribe_image(data, media_type)
+    except ocr.OcrError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    with transaction.atomic():
+        usage, _ = OcrUsage.objects.get_or_create(user=request.user, day=timezone.localdate())
+        OcrUsage.objects.filter(pk=usage.pk).update(count=F("count") + 1)
+    return JsonResponse({"text": text, "remaining": _ocr_remaining(request.user)})
 
 
 def privacy(request):

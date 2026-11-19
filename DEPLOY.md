@@ -74,3 +74,12 @@ Vercel → **Settings → Domains → Add**। তারপর Environment Varia
 - লাইভ সাইট আর কম্পিউটারের সাইট **আলাদা**। লাইভ ড্যাশবোর্ডে যা বদলাবেন, সেটা কম্পিউটারে আসবে না।
 - `clone_to_cloud` **শুধু প্রথমবার** চালান। পরে চালালে লাইভ সাইটের ডাটা লোকাল কপি দিয়ে **বদলে যাবে**।
 - পরে চাইলে ছবি Cloudinary-তে রাখা যায়: Vercel-এ `CLOUDINARY_URL` যোগ করলেই হবে।
+
+## Image to Text: AI Mode চালু করা (ঐচ্ছিক, খরচ আছে)
+1. https://console.anthropic.com → অ্যাকাউন্ট খুলুন → **Billing**-এ ক্রেডিট যোগ করুন → **API Keys → Create Key**
+2. Vercel → **Settings → Environment Variables** → `ANTHROPIC_API_KEY` = আপনার key (Production + Preview)
+3. ঐচ্ছিক: `OCR_AI_DAILY_LIMIT` (প্রতি ইউজারের দৈনিক সীমা, ডিফল্ট 30), `OCR_AI_MODEL` (ডিফল্ট `claude-opus-5-5`; সস্তা চাইলে `claude-haiku-5-5`)
+4. Redeploy করুন
+
+খরচ আনুমানিক: Opus প্রতি ছবি ~$0.03–0.06, Haiku প্রতি ছবি ~$0.001-এর কম। AI Mode শুধু লগইন করা ইউজার পায়।
+ছবি AI-এর কাছে পাঠানো হয় (Anthropic), কিন্তু ছবি বা লেখা এই সাইটে সেভ হয় না — শুধু দৈনিক ব্যবহারের সংখ্যা রাখা হয়।

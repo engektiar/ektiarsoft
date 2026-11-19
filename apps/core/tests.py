@@ -245,7 +245,7 @@ class ImageToTextToolTests(TestCase):
     def test_tool_page_loads_with_ocr_engine_and_privacy_note(self):
         html = self.client.get("/image-to-text/").content.decode()
         self.assertIn("tesseract.js@", html)
-        self.assertIn("never uploaded", html)
+        self.assertIn("never leaves it", html)  # free-mode privacy note
         self.assertIn('<option value="ben">', html)
 
     def test_menu_link_is_added_by_migration(self):
@@ -262,3 +262,88 @@ class ImageToTextToolTests(TestCase):
         html = self.client.get("/image-to-text/").content.decode()
         self.assertNotIn('enctype="multipart/form-data"', html)
         self.assertEqual(self.client.post("/image-to-text/").status_code, 405)
+
+
+import base64 as _b64
+import json as _json
+from types import SimpleNamespace
+from unittest import mock
+
+from django.test import override_settings as _override
+
+
+def _data_url(raw=None, kind="image/jpeg"):
+    return f"data:{kind};base64," + _b64.b64encode(raw or png_bytes()).decode()
+
+
+class _FakeClaude:
+    """Stands in for anthropic.Anthropic - records the request, returns a canned reply."""
+    last_kwargs = None
+
+    def __init__(self, *a, stop_reason="end_turn", text="Name | MST TEST\nNID | 123", **kw):
+        reply = SimpleNamespace(stop_reason=stop_reason, content=[SimpleNamespace(type="text", text=text)])
+
+        def create(**kwargs):
+            _FakeClaude.last_kwargs = kwargs
+            return reply
+        self.beta = SimpleNamespace(messages=SimpleNamespace(create=create))
+
+
+class AiOcrTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("ocr", "ocr@example.com", "abcdef")
+
+    def post(self, body):
+        return self.client.post("/image-to-text/ai/", data=_json.dumps(body), content_type="application/json")
+
+    @mock.patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"})
+    def test_requires_login(self):
+        self.assertEqual(self.post({"image": _data_url()}).status_code, 401)
+
+    @mock.patch.dict("os.environ", {}, clear=False)
+    def test_disabled_without_api_key(self):
+        import os
+        os.environ.pop("ANTHROPIC_API_KEY", None)
+        self.client.force_login(self.user)
+        self.assertEqual(self.post({"image": _data_url()}).status_code, 503)
+        self.assertNotIn('value="ai"', self.client.get("/image-to-text/").content.decode())
+
+    @mock.patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key", "OCR_AI_DAILY_LIMIT": "2"})
+    @mock.patch("anthropic.Anthropic", _FakeClaude)
+    def test_success_request_shape_limit_and_nothing_stored(self):
+        from apps.core.models import OcrUsage
+        self.client.force_login(self.user)
+        self.assertIn('value="ai"', self.client.get("/image-to-text/").content.decode())
+        before = {m.__name__: m.objects.count() for m in (ContactMessage, StoredFile)}
+        r = self.post({"image": _data_url()})
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertEqual(r.json()["text"], "Name | MST TEST\nNID | 123")
+        self.assertEqual(r.json()["remaining"], 1)
+        kw = _FakeClaude.last_kwargs
+        self.assertEqual(kw["model"], "claude-opus-5-5")
+        self.assertEqual(kw["fallbacks"], "default")
+        self.assertIn("server-side-fallback-2026-07-01", kw["betas"])
+        block = kw["messages"][0]["content"][0]
+        self.assertEqual((block["type"], block["source"]["media_type"]), ("image", "image/jpeg"))
+        # nothing but the usage counter is stored
+        self.assertEqual(before, {m.__name__: m.objects.count() for m in (ContactMessage, StoredFile)})
+        self.assertEqual(OcrUsage.objects.get(user=self.user).count, 1)
+        self.post({"image": _data_url()})
+        r = self.post({"image": _data_url()})
+        self.assertEqual(r.status_code, 429)  # daily limit (2) reached
+
+    @mock.patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"})
+    def test_bad_input_and_refusal(self):
+        from apps.core.models import OcrUsage
+        self.client.force_login(self.user)
+        self.assertEqual(self.post({"image": "not-a-data-url"}).status_code, 400)
+        self.assertEqual(self.post({"image": _data_url(kind="application/pdf")}).status_code, 400)
+        self.assertEqual(self.post({"image": _data_url(b"x" * (4 * 1024 * 1024 + 1))}).status_code, 400)
+        with mock.patch("anthropic.Anthropic", lambda *a, **k: _FakeClaude(stop_reason="refusal", text="")):
+            r = self.post({"image": _data_url()})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("declined", r.json()["error"])
+        self.assertFalse(OcrUsage.objects.filter(user=self.user, count__gt=0).exists())  # failures are not counted
+
+    def test_get_not_allowed(self):
+        self.assertEqual(self.client.get("/image-to-text/ai/").status_code, 405)

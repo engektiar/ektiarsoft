@@ -1,9 +1,9 @@
 {% extends "base.html" %}{% load ui %}
 {% block title %}Free Image to Text Converter (OCR): English & Bangla | {{ site.site_name }}{% endblock %}
-{% block description %}Convert images, screenshots and scanned documents to editable text for free. Supports English and Bangla. Runs in your browser: your image is never uploaded or stored.{% endblock %}
+{% block description %}Convert images, screenshots and scanned documents to editable text. Supports English and Bangla. Free mode runs in your browser; AI mode reads complex forms and tables accurately. Nothing is stored.{% endblock %}
 {% block schema %}
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"Image to Text Converter","url":"{{ canonical_url }}","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free OCR tool that extracts English and Bangla text from images, entirely in the browser.","creator":{"@id":"{{ SITE_URL }}/#person"}}
+{"@context":"https://schema.org","@type":"WebApplication","name":"Image to Text Converter","url":"{{ canonical_url }}","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"OCR tool that extracts English and Bangla text from images. Free mode runs in the browser; AI mode for forms and tables.","creator":{"@id":"{{ SITE_URL }}/#person"}}
 </script>
 {% endblock %}
 
@@ -14,26 +14,42 @@
     <ol class="breadcrumbs" aria-label="Breadcrumb"><li><a href="{% url 'core:home' %}">home</a></li><li aria-current="page">image to text</li></ol>
     <span class="eyebrow">Free AI tool</span>
     <h1>Image to <span class="grad-text">Text</span></h1>
-    <p>Turn photos, screenshots and scanned pages into editable text, in English and বাংলা.
-       Everything happens in your browser: <strong>your image is never uploaded or saved.</strong></p>
+    <p>Turn photos, screenshots, forms and scanned pages into editable text, in English and বাংলা.
+       <strong>Nothing you upload is saved.</strong></p>
   </div>
 </section>
 
 <section class="section" style="padding-top:0">
-  <div class="container ocr-grid" data-ocr>
+  <div class="container ocr-grid" data-ocr data-ai-url="{% url 'core:image_to_text_ai' %}">
+    {% csrf_token %}
     <!-- input -->
     <div class="card ocr-card">
-      <div class="ocr-head">
-        <h2>1. Choose an image</h2>
-        <label class="ocr-lang">
-          <span>Language</span>
-          <select class="input" data-lang>
-            <option value="eng">English</option>
-            <option value="ben">বাংলা (Bangla)</option>
-            <option value="eng+ben">English + বাংলা</option>
-          </select>
+      <div class="ocr-head"><h2>1. Choose an image</h2></div>
+
+      <div class="ocr-modes" role="radiogroup" aria-label="Recognition mode">
+        <label class="ocr-mode">
+          <input type="radio" name="ocr-mode" value="free" checked>
+          <span><strong>{% icon 'zap' 16 %} Free</strong><small>Runs on your device · best for clear printed text</small></span>
         </label>
+        {% if ai_enabled %}
+        <label class="ocr-mode {% if not user.is_authenticated %}locked{% endif %}">
+          <input type="radio" name="ocr-mode" value="ai" {% if not user.is_authenticated or ai_remaining == 0 %}disabled{% endif %}>
+          <span><strong>{% icon 'star' 16 %} AI Mode</strong>
+            {% if user.is_authenticated %}<small>Best for forms, tables & phone photos · {{ ai_remaining }} of {{ ai_limit }} left today</small>
+            {% else %}<small><a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a> to use AI mode (forms, tables, photos)</small>{% endif %}
+          </span>
+        </label>
+        {% endif %}
       </div>
+
+      <label class="ocr-lang" data-lang-row>
+        <span>Language</span>
+        <select class="input" data-lang>
+          <option value="eng">English</option>
+          <option value="ben">বাংলা (Bangla)</option>
+          <option value="eng+ben" selected>English + বাংলা</option>
+        </select>
+      </label>
 
       <label class="dropzone" data-drop tabindex="0">
         <input type="file" accept="image/*" data-file hidden>
@@ -41,7 +57,7 @@
         <span class="dz-empty" data-empty>
           <span class="card-icon">{% icon 'design' 26 %}</span>
           <strong>Drop an image here or click to choose</strong>
-          <small>JPG, PNG, WebP, BMP · or press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot</small>
+          <small>JPG, PNG, WebP · or press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot</small>
         </span>
       </label>
 
@@ -53,7 +69,8 @@
         <div class="bar"><i data-bar></i></div>
         <small data-status>Starting…</small>
       </div>
-      <p class="ocr-note">{% icon 'lock' 14 %} Private by design: recognition runs on your device. The first use downloads the language model (~2–10 MB), then it's cached.</p>
+      <p class="ocr-note" data-note-free>{% icon 'lock' 14 %} Free mode is private: recognition runs on your device and the image never leaves it. The first use downloads the language model (~2–10 MB).</p>
+      <p class="ocr-note" data-note-ai hidden>{% icon 'lock' 14 %} AI mode sends the image to our AI provider (Anthropic) to read it. Neither the image nor the text is stored on this site.</p>
     </div>
 
     <!-- output -->
@@ -74,11 +91,11 @@
 
 <section class="section section-alt">
   <div class="container">
-    <div class="section-head center"><span class="eyebrow">How it works</span><h2>Three steps, <span class="grad-text">zero uploads.</span></h2></div>
+    <div class="section-head center"><span class="eyebrow">How it works</span><h2>Two modes, <span class="grad-text">nothing stored.</span></h2></div>
     <div class="grid grid-3 process">
       <div class="card"><div class="card-icon">{% icon 'design' 24 %}</div><h3>Choose an image</h3><p>Drag & drop, click to browse, paste a screenshot, or take a photo on your phone.</p></div>
-      <div class="card"><div class="card-icon">{% icon 'cpu' 24 %}</div><h3>AI reads the text</h3><p>The Tesseract OCR engine recognises English and Bangla characters right inside your browser.</p></div>
-      <div class="card"><div class="card-icon">{% icon 'check' 24 %}</div><h3>Copy or download</h3><p>Edit the result, copy it to the clipboard or save it as a .txt file. Nothing is stored anywhere.</p></div>
+      <div class="card"><div class="card-icon">{% icon 'cpu' 24 %}</div><h3>Free or AI</h3><p>Free mode reads clear printed text on your device. AI mode reads complex forms, tables and phone photos accurately.</p></div>
+      <div class="card"><div class="card-icon">{% icon 'check' 24 %}</div><h3>Copy or download</h3><p>Edit the result, copy it to the clipboard or save it as a .txt file. Nothing is kept on our servers.</p></div>
     </div>
   </div>
 </section>
@@ -92,21 +109,31 @@
   var root = document.querySelector("[data-ocr]"); if (!root) return;
   var $ = function (s) { return root.querySelector(s); };
   var fileInput = $("[data-file]"), drop = $("[data-drop]"), preview = $("[data-preview]"), empty = $("[data-empty]");
-  var runBtn = $("[data-run]"), clearBtn = $("[data-clear]"), langSel = $("[data-lang]");
+  var runBtn = $("[data-run]"), clearBtn = $("[data-clear]"), langSel = $("[data-lang]"), langRow = $("[data-lang-row]");
   var progress = $("[data-progress]"), bar = $("[data-bar]"), statusEl = $("[data-status]");
   var output = $("[data-output]"), countEl = $("[data-count]"), copyBtn = $("[data-copy]"), dlBtn = $("[data-download]"), errEl = $("[data-error]");
+  var noteFree = $("[data-note-free]"), noteAi = $("[data-note-ai]");
+  var csrf = (root.querySelector("[name=csrfmiddlewaretoken]") || {}).value;
   var current = null, objectUrl = null, workers = {}, busy = false;
   var MAX = 15 * 1024 * 1024;
 
+  function mode() { var r = root.querySelector("[name=ocr-mode]:checked"); return r ? r.value : "free"; }
   function showError(msg) { errEl.textContent = msg; errEl.hidden = !msg; }
+  function setStatus(text, pct) { progress.hidden = false; statusEl.textContent = text; if (pct != null) bar.style.width = pct + "%"; }
   function updateCount() {
     var t = output.value.trim(), words = t ? t.split(/\s+/).length : 0;
     countEl.textContent = words + " words · " + output.value.length + " characters";
     copyBtn.disabled = dlBtn.disabled = !output.value.trim();
   }
+  function applyMode() {
+    var ai = mode() === "ai";
+    langRow.hidden = ai; noteFree.hidden = ai; noteAi.hidden = !ai;
+  }
+  root.querySelectorAll("[name=ocr-mode]").forEach(function (r) { r.addEventListener("change", applyMode); });
+
   function setImage(file) {
     showError("");
-    if (!file || !/^image\//.test(file.type)) { showError("Please choose an image file (JPG, PNG, WebP, BMP)."); return; }
+    if (!file || !/^image\//.test(file.type)) { showError("Please choose an image file (JPG, PNG, WebP)."); return; }
     if (file.size > MAX) { showError("This image is larger than 15 MB. Please use a smaller one."); return; }
     current = file;
     if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -114,7 +141,6 @@
     preview.src = objectUrl; preview.hidden = false; empty.hidden = true;
     runBtn.disabled = false; clearBtn.hidden = false;
   }
-
   fileInput.addEventListener("change", function () { setImage(fileInput.files[0]); });
   drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
   ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
@@ -125,6 +151,35 @@
     for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0) { setImage(items[i].getAsFile()); break; }
   });
 
+  /* draw the image on a canvas, scaled so its longer side is `target` px */
+  function loadCanvas(target, upscale) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var scale = target / Math.max(img.width, img.height);
+        if (!upscale && scale > 1) scale = 1;
+        var c = document.createElement("canvas");
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        var ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.imageSmoothingQuality = "high"; ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c);
+      };
+      img.onerror = function () { reject(new Error("Could not open this image.")); };
+      img.src = objectUrl;
+    });
+  }
+  /* free mode: grayscale + contrast stretch (1st..99th percentile) helps Tesseract on photos */
+  function enhance(c) {
+    var ctx = c.getContext("2d"), d = ctx.getImageData(0, 0, c.width, c.height), p = d.data, hist = new Uint32Array(256), n = p.length / 4;
+    for (var i = 0; i < p.length; i += 4) { var g = (p[i] * 299 + p[i + 1] * 587 + p[i + 2] * 114) / 1000 | 0; p[i] = g; hist[g]++; }
+    var lo = 0, hi = 255, acc = 0;
+    for (; lo < 255 && (acc += hist[lo]) < n * 0.01; lo++);
+    for (acc = 0; hi > 0 && (acc += hist[hi]) < n * 0.01; hi--);
+    var range = Math.max(1, hi - lo);
+    for (i = 0; i < p.length; i += 4) { var v = Math.max(0, Math.min(255, (p[i] - lo) * 255 / range)); p[i] = p[i + 1] = p[i + 2] = v; }
+    ctx.putImageData(d, 0, 0); return c;
+  }
+
   function getWorker(lang) {
     if (!workers[lang]) {
       workers[lang] = Tesseract.createWorker(lang, 1, {
@@ -133,27 +188,52 @@
           var labels = { "loading tesseract core": "Loading OCR engine…", "initializing tesseract": "Starting…",
                          "loading language traineddata": "Downloading language model…", "initializing api": "Preparing…",
                          "recognizing text": "Reading text…" };
-          statusEl.textContent = (labels[m.status] || m.status) + (m.progress ? " " + Math.round(m.progress * 100) + "%" : "");
-          if (m.status === "recognizing text") bar.style.width = Math.round(m.progress * 100) + "%";
+          setStatus((labels[m.status] || m.status) + (m.progress ? " " + Math.round(m.progress * 100) + "%" : ""),
+                    m.status === "recognizing text" ? Math.round(m.progress * 100) : null);
         }
-      }).catch(function (e) { delete workers[lang]; throw e; });
+      }).then(function (w) { return w.setParameters({ preserve_interword_spaces: "1" }).then(function () { return w; }); })
+        .catch(function (e) { delete workers[lang]; throw e; });
     }
     return workers[lang];
+  }
+  function runFree() {
+    if (!window.Tesseract) return Promise.reject(new Error("The OCR engine could not load. Check your internet connection and try again."));
+    setStatus("Preparing image…", 5);
+    return loadCanvas(2400, true).then(enhance).then(function (canvas) {
+      return getWorker(langSel.value).then(function (w) { return w.recognize(canvas); });
+    }).then(function (res) { return (res.data.text || "").replace(/\n{3,}/g, "\n\n").trim(); });
+  }
+  function runAi() {
+    setStatus("Preparing image…", 10);
+    return loadCanvas(1600, false).then(function (canvas) {
+      setStatus("AI is reading the image… (10–40 seconds)", 40);
+      return fetch(root.dataset.aiUrl, {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+        body: JSON.stringify({ image: canvas.toDataURL("image/jpeg", 0.85) })
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return { error: "Unexpected server response (" + r.status + ")." }; });
+    }).then(function (d) {
+      if (d.error) throw new Error(d.error);
+      if (d.remaining != null) {
+        var small = root.querySelector("input[value=ai]").closest("label").querySelector("small");
+        if (small) small.textContent = "Best for forms, tables & phone photos · " + d.remaining + " left today";
+      }
+      return d.text;
+    });
   }
 
   runBtn.addEventListener("click", function () {
     if (!current || busy) return;
-    if (!window.Tesseract) { showError("The OCR engine could not load. Check your internet connection and try again."); return; }
-    busy = true; showError(""); runBtn.disabled = true; runBtn.querySelector("span").textContent = "Working…";
-    progress.hidden = false; bar.style.width = "0%"; statusEl.textContent = "Starting…";
-    getWorker(langSel.value)
-      .then(function (w) { return w.recognize(current); })
-      .then(function (res) {
-        output.value = (res.data.text || "").replace(/\n{3,}/g, "\n\n").trim();
-        if (!output.value) showError("No text was found in this image. Try a clearer or larger image, or change the language.");
-        updateCount(); bar.style.width = "100%"; statusEl.textContent = "Done!";
+    busy = true; showError(""); runBtn.disabled = true; runBtn.querySelector("span").textContent = "Working…"; bar.style.width = "0%";
+    (mode() === "ai" ? runAi() : runFree())
+      .then(function (text) {
+        output.value = text || "";
+        if (!output.value) showError("No text was found in this image. Try a clearer image" + (mode() === "free" ? ", change the language, or use AI mode." : "."));
+        updateCount(); setStatus("Done!", 100);
       })
-      .catch(function (e) { showError("Something went wrong while reading the image. Please try again."); console.error(e); })
+      .catch(function (e) { showError(e.message || "Something went wrong while reading the image. Please try again."); progress.hidden = true; })
       .then(function () { busy = false; runBtn.disabled = false; runBtn.querySelector("span").textContent = "Extract text"; });
   });
 
@@ -162,7 +242,6 @@
     preview.hidden = true; preview.removeAttribute("src"); empty.hidden = false; runBtn.disabled = true; clearBtn.hidden = true;
     progress.hidden = true; output.value = ""; showError(""); updateCount();
   });
-
   output.addEventListener("input", updateCount);
   copyBtn.addEventListener("click", function () {
     var done = function () { copyBtn.querySelector("span").textContent = "Copied!"; setTimeout(function () { copyBtn.querySelector("span").textContent = "Copy text"; }, 1600); };
@@ -175,7 +254,7 @@
     a.download = "image-text.txt"; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   });
-  updateCount();
+  applyMode(); updateCount();
 })();
 </script>
 {% endblock %}

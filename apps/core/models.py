@@ -550,3 +550,19 @@ class StoredFile(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class OcrUsage(models.Model):
+    """How many AI text extractions a user made on a day (for the daily limit).
+    Only the count is stored - never the image or the extracted text."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ocr_usage")
+    day = models.DateField()
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [("user", "day")]
+        verbose_name = "AI OCR usage"
+
+    def __str__(self):
+        return f"{self.user} {self.day}: {self.count}"

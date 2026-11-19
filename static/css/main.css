@@ -631,3 +631,16 @@ kbd { font-family: var(--mono); font-size: .78em; padding: .1em .4em; border-rad
 
 /* the HTML "hidden" attribute must always win over display rules */
 [hidden] { display: none !important; }
+
+/* OCR mode switch */
+.ocr-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.ocr-mode { position: relative; cursor: pointer; }
+.ocr-mode input { position: absolute; opacity: 0; pointer-events: none; }
+.ocr-mode > span { display: grid; gap: 4px; height: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); transition: .2s; }
+.ocr-mode strong { display: flex; align-items: center; gap: 6px; font-size: .95rem; }
+.ocr-mode small { color: var(--muted); font-size: .8rem; }
+.ocr-mode small a { color: var(--primary-2); font-weight: 600; text-decoration: underline; }
+.ocr-mode input:checked + span { border-color: var(--primary); background: var(--grad-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent); }
+.ocr-mode input:focus-visible + span { outline: 2px solid var(--primary-2); outline-offset: 2px; }
+.ocr-mode input:disabled + span { cursor: default; opacity: .75; }
+.ocr-mode.locked > span strong { color: var(--muted); }
