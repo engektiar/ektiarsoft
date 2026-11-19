@@ -38,7 +38,8 @@ class Role(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
         if self.is_default:
-            Role.objects.exclude(pk=self.pk).filter(is_default=True).update(is_default=False)
+            Role.objects.using(self._state.db or "default").exclude(pk=self.pk).filter(
+                is_default=True).update(is_default=False)
 
     @classmethod
     def get_default(cls):

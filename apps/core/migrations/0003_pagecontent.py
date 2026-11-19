@@ -5,6 +5,7 @@ from django.db import migrations, models
 
 def seed_pages_and_perms(apps, schema_editor):
     """Create default page-heading rows and grant the new permissions to existing roles."""
+    db = schema_editor.connection.alias  # the database being migrated
     from django.contrib.auth.management import create_permissions
 
     from apps.core.models import PageContent as LivePage
@@ -14,19 +15,19 @@ def seed_pages_and_perms(apps, schema_editor):
         # only fields that exist at this migration (DEFAULTS also holds fields added later)
         known = {f.name for f in PageContent._meta.get_fields()}
         defaults = {k: v for k, v in LivePage.DEFAULTS.get(key, {}).items() if k in known}
-        PageContent.objects.get_or_create(page=key, defaults=defaults)
+        PageContent.objects.using(db).get_or_create(page=key, defaults=defaults)
 
     core_cfg = apps.get_app_config("core")
     core_cfg.models_module = True
-    create_permissions(core_cfg, apps=apps, verbosity=0)
+    create_permissions(core_cfg, apps=apps, verbosity=0, using=db)
     core_cfg.models_module = None
 
     Permission = apps.get_model("auth", "Permission")
     Role = apps.get_model("accounts", "Role")
-    perms = Permission.objects.filter(content_type__app_label="core", content_type__model="pagecontent")
+    perms = Permission.objects.using(db).filter(content_type__app_label="core", content_type__model="pagecontent")
     grants = {"admin": perms, "editor": perms.filter(codename__in=["view_pagecontent", "change_pagecontent"])}
     for slug, qs in grants.items():
-        role = Role.objects.filter(slug=slug).first()
+        role = Role.objects.using(db).filter(slug=slug).first()
         if role:  # on a fresh install roles are created later, with these perms included
             role.permissions.add(*qs)
 

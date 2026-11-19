@@ -46,8 +46,8 @@ DEFAULT_ROLES = {
 }
 
 
-def _resolve(patterns):
-    qs = Permission.objects.select_related("content_type")
+def _resolve(patterns, using="default"):
+    qs = Permission.objects.using(using).select_related("content_type")
     result = []
     for perm in qs:
         full = f"{perm.content_type.app_label}.{perm.codename}"
@@ -70,8 +70,10 @@ def create_default_roles(sender, **kwargs):
         return
     from .models import Role
 
+    db = kwargs.get("using") or "default"  # the database that was just migrated
+    roles = Role.objects.using(db)
     for slug, cfg in DEFAULT_ROLES.items():
-        role, created = Role.objects.get_or_create(
+        role, created = roles.get_or_create(
             slug=slug,
             defaults={
                 "name": cfg["name"],
@@ -81,17 +83,17 @@ def create_default_roles(sender, **kwargs):
             },
         )
         if created:
-            role.permissions.set(_resolve(cfg["perms"]))
-            if cfg.get("default") and not Role.objects.filter(is_default=True).exists():
+            role.permissions.set(_resolve(cfg["perms"], using=db))
+            if cfg.get("default") and not roles.filter(is_default=True).exists():
                 role.is_default = True
-                role.save()
+                role.save(using=db)
 
     # make sure some role is default
-    if not Role.objects.filter(is_default=True).exists():
-        r = Role.objects.filter(slug=settings.DEFAULT_USER_ROLE).first()
+    if not roles.filter(is_default=True).exists():
+        r = roles.filter(slug=settings.DEFAULT_USER_ROLE).first()
         if r:
             r.is_default = True
-            r.save()
+            r.save(using=db)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -100,11 +102,12 @@ def assign_role(sender, instance, created, **kwargs):
         return
     from .models import Role
 
-    role = (
-        Role.objects.filter(slug="super-admin").first()
-        if instance.is_superuser
-        else Role.get_default()
-    )
+    db = kwargs.get("using") or instance._state.db or "default"
+    roles = Role.objects.using(db)
+    if instance.is_superuser:
+        role = roles.filter(slug="super-admin").first()
+    else:
+        role = roles.filter(is_default=True).first()
     if role:
-        type(instance).objects.filter(pk=instance.pk).update(role=role)
+        type(instance).objects.using(db).filter(pk=instance.pk).update(role=role)
         instance.role = role

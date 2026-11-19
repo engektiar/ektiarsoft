@@ -54,8 +54,9 @@ class Migration(migrations.Migration):
 
 
 def fill_home_buttons(apps, schema_editor):
+    db = schema_editor.connection.alias  # the database being migrated
     PageContent = apps.get_model("core", "PageContent")
-    PageContent.objects.filter(page="home", button_text="").update(
+    PageContent.objects.using(db).filter(page="home", button_text="").update(
         button_text="Start your project", button_url="/contact/",
         button2_text="View my work", button2_url="/portfolio/",
     )

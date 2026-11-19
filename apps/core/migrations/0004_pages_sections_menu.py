@@ -91,6 +91,7 @@ class Migration(migrations.Migration):
 
 def seed_builder(apps, schema_editor):
     """Fill page names/URLs, create default sections & menu links, grant permissions."""
+    db = schema_editor.connection.alias  # the database being migrated
     from django.contrib.auth.management import create_permissions
 
     from apps.core.defaults import DEFAULT_MENU, DEFAULT_SECTIONS
@@ -100,46 +101,46 @@ def seed_builder(apps, schema_editor):
     Section = apps.get_model("core", "Section")
     MenuItem = apps.get_model("core", "MenuItem")
     SiteSetting = apps.get_model("core", "SiteSetting")
-    owner = (SiteSetting.objects.filter(pk=1).values_list("owner_name", flat=True).first() or "").strip()
+    owner = (SiteSetting.objects.using(db).filter(pk=1).values_list("owner_name", flat=True).first() or "").strip()
 
     labels = dict(Live.BUILTIN)
     for key, label in Live.BUILTIN:
         page_fields = {f.name for f in PageContent._meta.get_fields()}
         defaults = {k: v for k, v in Live.DEFAULTS.get(key, {}).items() if k in page_fields}
-        page, _ = PageContent.objects.get_or_create(page=key, defaults=defaults)
+        page, _ = PageContent.objects.using(db).get_or_create(page=key, defaults=defaults)
         page.title = page.title or label
         page.slug = page.slug or key
         for f in ("meta_title", "meta_description"):
             if not getattr(page, f):
                 setattr(page, f, Live.DEFAULTS.get(key, {}).get(f, ""))
         page.save()
-        if not Section.objects.filter(page=page).exists():
+        if not Section.objects.using(db).filter(page=page).exists():
             for i, cfg in enumerate(DEFAULT_SECTIONS.get(key, [])):
                 cfg = dict(cfg)
                 if key == "about" and cfg["kind"] == "about" and owner:
                     cfg["highlight"] = owner + "."
                 section_fields = {f.name for f in Section._meta.get_fields()}
                 cfg = {k: v for k, v in cfg.items() if k in section_fields}
-                Section.objects.create(page=page, order=(i + 1) * 10, **cfg)
+                Section.objects.using(db).create(page=page, order=(i + 1) * 10, **cfg)
     del labels
 
-    if not MenuItem.objects.exists():
+    if not MenuItem.objects.using(db).exists():
         for loc, links in DEFAULT_MENU.items():
             for i, (label, url) in enumerate(links):
-                MenuItem.objects.create(location=loc, label=label, url=url, order=(i + 1) * 10)
+                MenuItem.objects.using(db).create(location=loc, label=label, url=url, order=(i + 1) * 10)
 
     core_cfg = apps.get_app_config("core")
     core_cfg.models_module = True
-    create_permissions(core_cfg, apps=apps, verbosity=0)
+    create_permissions(core_cfg, apps=apps, verbosity=0, using=db)
     core_cfg.models_module = None
     Permission = apps.get_model("auth", "Permission")
     Role = apps.get_model("accounts", "Role")
-    new = Permission.objects.filter(content_type__app_label="core",
+    new = Permission.objects.using(db).filter(content_type__app_label="core",
                                     content_type__model__in=["section", "menuitem"])
-    admin = Role.objects.filter(slug="admin").first()
+    admin = Role.objects.using(db).filter(slug="admin").first()
     if admin:
         admin.permissions.add(*new)
-    editor = Role.objects.filter(slug="editor").first()
+    editor = Role.objects.using(db).filter(slug="editor").first()
     if editor:
         editor.permissions.add(*new.filter(content_type__model="section"))
 
