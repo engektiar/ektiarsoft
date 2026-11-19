@@ -16,7 +16,7 @@
   {% if field.errors %}
     {% for e in field.errors %}<p class="error">{% icon 'alert' 14 %}<span>{{ e }}</span></p>{% endfor %}
   {% endif %}
-  {% if meter %}<div class="strength" data-strength aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="hint" data-strength-hint>Use 8+ characters with letters, numbers &amp; symbols.</p>{% endif %}
+  {% if meter %}<div class="strength" data-strength aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="hint" data-strength-hint>At least 6 characters.</p>{% endif %}
   {% if match %}<p class="hint" data-match-hint></p>{% endif %}
   {% if counter %}<p class="hint counter"><span data-count-for="{{ field.id_for_label }}">0</span> / {{ field.field.widget.attrs.maxlength }}</p>{% endif %}
 </div>

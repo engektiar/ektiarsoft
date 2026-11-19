@@ -60,7 +60,7 @@ class RegisterForm(StyledMixin, UserCreationForm):
             "last_name": ("user", "Doe", "family-name"),
             "username": ("tag", "johndoe", "username"),
             "email": ("mail", "you@company.com", "email"),
-            "password1": ("shield", "At least 8 characters", "new-password"),
+            "password1": ("shield", "At least 6 characters", "new-password"),
             "password2": ("shield", "Repeat your password", "new-password"),
         })
 

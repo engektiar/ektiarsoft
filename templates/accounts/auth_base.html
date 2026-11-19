@@ -108,7 +108,7 @@
     pw.addEventListener("input", function () {
       var s = score(pw.value);
       meter.dataset.score = s;
-      hint.textContent = s ? labels[s] : "Use 8+ characters with letters, numbers & symbols.";
+      hint.textContent = s ? labels[s] : "At least 6 characters.";
       hint.className = "hint" + (s === 4 ? " ok" : "");
       checkMatch();
     });

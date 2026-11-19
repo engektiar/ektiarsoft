@@ -169,12 +169,19 @@ LOGIN_REDIRECT_URL = "dashboard:home"
 LOGOUT_REDIRECT_URL = "core:home"
 DEFAULT_USER_ROLE = env("DEFAULT_USER_ROLE", "client")
 
+# Simple password rule: only a minimum length (owner's choice).
+# For stricter rules set PASSWORD_STRICT=True (adds similarity / common / numeric checks).
+PASSWORD_MIN_LENGTH = int(env("PASSWORD_MIN_LENGTH", "6"))
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+     "OPTIONS": {"min_length": PASSWORD_MIN_LENGTH}},
 ]
+if env_bool("PASSWORD_STRICT", False):
+    AUTH_PASSWORD_VALIDATORS += [
+        {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+        {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+        {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    ]
 
 
 # --- i18n ------------------------------------------------------------------
