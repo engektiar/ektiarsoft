@@ -77,6 +77,13 @@ def project_detail(request, slug):
     })
 
 
+@require_GET
+def image_to_text(request):
+    """Free OCR tool. Recognition runs entirely in the visitor's browser (Tesseract.js):
+    the image is never uploaded and nothing is stored."""
+    return render(request, "core/image_to_text.html")
+
+
 def privacy(request):
     return render(request, "core/privacy.html")
 

@@ -23,6 +23,19 @@ class PageSitemap(_Base):
         return 1.0 if obj.page == "home" else 0.8
 
 
+class ToolsSitemap(_Base):
+    changefreq = "monthly"
+    priority = 0.7
+
+    def items(self):
+        return ["core:image_to_text"]
+
+    def location(self, item):
+        from django.urls import reverse
+
+        return reverse(item)
+
+
 class ServiceSitemap(_Base):
     changefreq = "monthly"
     priority = 0.9
@@ -55,6 +68,7 @@ class PostSitemap(_Base):
 
 SITEMAPS = {
     "pages": PageSitemap,
+    "tools": ToolsSitemap,
     "services": ServiceSitemap,
     "projects": ProjectSitemap,
     "blog": PostSitemap,

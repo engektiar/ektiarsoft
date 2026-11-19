@@ -294,7 +294,7 @@ class ServiceRequest(models.Model):
 
 RESERVED_SLUGS = {
     "admin", "accounts", "dashboard", "blog", "about", "services", "portfolio", "pricing",
-    "contact", "privacy-policy", "static", "media", "files", "home", "sitemap", "robots",
+    "contact", "privacy-policy", "static", "media", "files", "home", "sitemap", "robots", "image-to-text",
 }
 
 

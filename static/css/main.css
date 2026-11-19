@@ -598,3 +598,36 @@ html, body { overflow-x: hidden; }
 
 /* skill bars must be visible for users who turned animations off */
 @media (prefers-reduced-motion: reduce) { .bar i { width: var(--w); } }
+
+/* ---------- Image to Text (OCR) tool ---------- */
+.ocr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+.ocr-card { display: flex; flex-direction: column; gap: 16px; }
+.ocr-card:hover { transform: none; }
+.ocr-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ocr-head h2 { font-size: 1.2rem; margin: 0; }
+.ocr-lang { display: flex; align-items: center; gap: 8px; font-size: .85rem; color: var(--muted); }
+.ocr-lang .input { width: auto; padding: .5rem 2.2rem .5rem .8rem; }
+.dropzone {
+  position: relative; display: grid; place-items: center; min-height: 260px; padding: 18px; cursor: pointer; text-align: center;
+  border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); transition: border-color .2s, background .2s;
+}
+.dropzone:hover, .dropzone.over, .dropzone:focus-visible { border-color: var(--primary); background: var(--grad-soft); outline: none; }
+.dropzone img { max-width: 100%; max-height: 360px; border-radius: 10px; object-fit: contain; }
+.dz-empty { display: grid; justify-items: center; gap: 6px; }
+.dz-empty .card-icon { margin: 0 0 6px; }
+.dz-empty small { color: var(--faint); }
+kbd { font-family: var(--mono); font-size: .78em; padding: .1em .4em; border-radius: 5px; border: 1px solid var(--border-strong); background: var(--surface-2); }
+.ocr-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ocr-actions .btn[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
+.ocr-progress .bar { height: 8px; }
+.ocr-progress .bar i { width: 0; transition: width .3s; }
+.ocr-progress small { display: block; margin-top: 6px; color: var(--muted); }
+.ocr-note { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: .82rem; color: var(--faint); }
+.ocr-note .icon { color: var(--accent); margin-top: 3px; }
+.ocr-output { min-height: 320px; font-family: var(--mono); font-size: .92rem; line-height: 1.7; }
+.ocr-error { margin: 0; color: var(--danger); font-size: .9rem; }
+@media (max-width: 900px) { .ocr-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .ocr-actions .btn { flex: 1; } .dropzone { min-height: 200px; } }
+
+/* the HTML "hidden" attribute must always win over display rules */
+[hidden] { display: none !important; }

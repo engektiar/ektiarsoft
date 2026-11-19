@@ -32,7 +32,7 @@ class FreshDatabaseTests(TestCase):
             sorted(PageContent.objects.values_list("page", flat=True)),
             sorted(k for k, _ in PageContent.BUILTIN))
         self.assertEqual(Section.objects.count(), 26)
-        self.assertEqual(MenuItem.objects.count(), 12)
+        self.assertEqual(MenuItem.objects.count(), 13)  # 12 defaults + "Image to Text"
         self.assertEqual(set(Role.objects.values_list("slug", flat=True)), {"super-admin", "admin", "editor", "client"})
         self.assertEqual(PageContent.get("home").button_text, "Start your project")
 
@@ -239,3 +239,26 @@ class InboxVisibilityTests(TestCase):
         self.assertIn('class="side-badge"', page)                  # sidebar badge with unread count
         self.assertIn("1 new message from the website contact form", page)
         self.assertIn("Lead", self.client.get("/dashboard/m/messages/").content.decode())
+
+
+class ImageToTextToolTests(TestCase):
+    def test_tool_page_loads_with_ocr_engine_and_privacy_note(self):
+        html = self.client.get("/image-to-text/").content.decode()
+        self.assertIn("tesseract.js@", html)
+        self.assertIn("never uploaded", html)
+        self.assertIn('<option value="ben">', html)
+
+    def test_menu_link_is_added_by_migration(self):
+        self.assertTrue(MenuItem.objects.filter(url="/image-to-text/", location="header").exists())
+        self.assertIn('href="/image-to-text/"', self.client.get("/").content.decode())
+
+    def test_tool_is_in_sitemap_and_url_is_reserved(self):
+        self.assertIn("/image-to-text/", self.client.get("/sitemap.xml").content.decode())
+        from apps.core.models import RESERVED_SLUGS
+        self.assertIn("image-to-text", RESERVED_SLUGS)
+
+    def test_tool_has_no_server_side_upload(self):
+        # the page must not post the image anywhere: no <form> with file upload on it
+        html = self.client.get("/image-to-text/").content.decode()
+        self.assertNotIn('enctype="multipart/form-data"', html)
+        self.assertEqual(self.client.post("/image-to-text/").status_code, 405)

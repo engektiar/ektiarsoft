@@ -1,0 +1,181 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Free Image to Text Converter (OCR): English & Bangla | {{ site.site_name }}{% endblock %}
+{% block description %}Convert images, screenshots and scanned documents to editable text for free. Supports English and Bangla. Runs in your browser: your image is never uploaded or stored.{% endblock %}
+{% block schema %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Image to Text Converter","url":"{{ canonical_url }}","applicationCategory":"UtilitiesApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free OCR tool that extracts English and Bangla text from images, entirely in the browser.","creator":{"@id":"{{ SITE_URL }}/#person"}}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="blob blob-1" aria-hidden="true"></div>
+  <div class="container">
+    <ol class="breadcrumbs" aria-label="Breadcrumb"><li><a href="{% url 'core:home' %}">home</a></li><li aria-current="page">image to text</li></ol>
+    <span class="eyebrow">Free AI tool</span>
+    <h1>Image to <span class="grad-text">Text</span></h1>
+    <p>Turn photos, screenshots and scanned pages into editable text, in English and বাংলা.
+       Everything happens in your browser: <strong>your image is never uploaded or saved.</strong></p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="container ocr-grid" data-ocr>
+    <!-- input -->
+    <div class="card ocr-card">
+      <div class="ocr-head">
+        <h2>1. Choose an image</h2>
+        <label class="ocr-lang">
+          <span>Language</span>
+          <select class="input" data-lang>
+            <option value="eng">English</option>
+            <option value="ben">বাংলা (Bangla)</option>
+            <option value="eng+ben">English + বাংলা</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="dropzone" data-drop tabindex="0">
+        <input type="file" accept="image/*" data-file hidden>
+        <img data-preview alt="Selected image preview" hidden>
+        <span class="dz-empty" data-empty>
+          <span class="card-icon">{% icon 'design' 26 %}</span>
+          <strong>Drop an image here or click to choose</strong>
+          <small>JPG, PNG, WebP, BMP · or press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a screenshot</small>
+        </span>
+      </label>
+
+      <div class="ocr-actions">
+        <button type="button" class="btn btn-primary" data-run disabled>{% icon 'zap' 18 %} <span>Extract text</span></button>
+        <button type="button" class="btn btn-ghost" data-clear hidden>Clear</button>
+      </div>
+      <div class="ocr-progress" data-progress hidden>
+        <div class="bar"><i data-bar></i></div>
+        <small data-status>Starting…</small>
+      </div>
+      <p class="ocr-note">{% icon 'lock' 14 %} Private by design: recognition runs on your device. The first use downloads the language model (~2–10 MB), then it's cached.</p>
+    </div>
+
+    <!-- output -->
+    <div class="card ocr-card">
+      <div class="ocr-head">
+        <h2>2. Your text</h2>
+        <small class="muted" data-count>0 words · 0 characters</small>
+      </div>
+      <textarea class="input ocr-output" data-output rows="14" placeholder="The extracted text will appear here. You can edit it before copying." spellcheck="false"></textarea>
+      <div class="ocr-actions">
+        <button type="button" class="btn btn-primary" data-copy disabled>{% icon 'check' 16 %} <span>Copy text</span></button>
+        <button type="button" class="btn btn-ghost" data-download disabled>Download .txt</button>
+      </div>
+      <p class="ocr-error" data-error role="alert" hidden></p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head center"><span class="eyebrow">How it works</span><h2>Three steps, <span class="grad-text">zero uploads.</span></h2></div>
+    <div class="grid grid-3 process">
+      <div class="card"><div class="card-icon">{% icon 'design' 24 %}</div><h3>Choose an image</h3><p>Drag & drop, click to browse, paste a screenshot, or take a photo on your phone.</p></div>
+      <div class="card"><div class="card-icon">{% icon 'cpu' 24 %}</div><h3>AI reads the text</h3><p>The Tesseract OCR engine recognises English and Bangla characters right inside your browser.</p></div>
+      <div class="card"><div class="card-icon">{% icon 'check' 24 %}</div><h3>Copy or download</h3><p>Edit the result, copy it to the clipboard or save it as a .txt file. Nothing is stored anywhere.</p></div>
+    </div>
+  </div>
+</section>
+{% include "partials/_cta.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
+<script>
+(function () {
+  var root = document.querySelector("[data-ocr]"); if (!root) return;
+  var $ = function (s) { return root.querySelector(s); };
+  var fileInput = $("[data-file]"), drop = $("[data-drop]"), preview = $("[data-preview]"), empty = $("[data-empty]");
+  var runBtn = $("[data-run]"), clearBtn = $("[data-clear]"), langSel = $("[data-lang]");
+  var progress = $("[data-progress]"), bar = $("[data-bar]"), statusEl = $("[data-status]");
+  var output = $("[data-output]"), countEl = $("[data-count]"), copyBtn = $("[data-copy]"), dlBtn = $("[data-download]"), errEl = $("[data-error]");
+  var current = null, objectUrl = null, workers = {}, busy = false;
+  var MAX = 15 * 1024 * 1024;
+
+  function showError(msg) { errEl.textContent = msg; errEl.hidden = !msg; }
+  function updateCount() {
+    var t = output.value.trim(), words = t ? t.split(/\s+/).length : 0;
+    countEl.textContent = words + " words · " + output.value.length + " characters";
+    copyBtn.disabled = dlBtn.disabled = !output.value.trim();
+  }
+  function setImage(file) {
+    showError("");
+    if (!file || !/^image\//.test(file.type)) { showError("Please choose an image file (JPG, PNG, WebP, BMP)."); return; }
+    if (file.size > MAX) { showError("This image is larger than 15 MB. Please use a smaller one."); return; }
+    current = file;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    preview.src = objectUrl; preview.hidden = false; empty.hidden = true;
+    runBtn.disabled = false; clearBtn.hidden = false;
+  }
+
+  fileInput.addEventListener("change", function () { setImage(fileInput.files[0]); });
+  drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+  ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
+  drop.addEventListener("drop", function (e) { if (e.dataTransfer.files.length) setImage(e.dataTransfer.files[0]); });
+  window.addEventListener("paste", function (e) {
+    var items = (e.clipboardData || {}).items || [];
+    for (var i = 0; i < items.length; i++) if (items[i].type.indexOf("image") === 0) { setImage(items[i].getAsFile()); break; }
+  });
+
+  function getWorker(lang) {
+    if (!workers[lang]) {
+      workers[lang] = Tesseract.createWorker(lang, 1, {
+        logger: function (m) {
+          if (!busy) return;
+          var labels = { "loading tesseract core": "Loading OCR engine…", "initializing tesseract": "Starting…",
+                         "loading language traineddata": "Downloading language model…", "initializing api": "Preparing…",
+                         "recognizing text": "Reading text…" };
+          statusEl.textContent = (labels[m.status] || m.status) + (m.progress ? " " + Math.round(m.progress * 100) + "%" : "");
+          if (m.status === "recognizing text") bar.style.width = Math.round(m.progress * 100) + "%";
+        }
+      }).catch(function (e) { delete workers[lang]; throw e; });
+    }
+    return workers[lang];
+  }
+
+  runBtn.addEventListener("click", function () {
+    if (!current || busy) return;
+    if (!window.Tesseract) { showError("The OCR engine could not load. Check your internet connection and try again."); return; }
+    busy = true; showError(""); runBtn.disabled = true; runBtn.querySelector("span").textContent = "Working…";
+    progress.hidden = false; bar.style.width = "0%"; statusEl.textContent = "Starting…";
+    getWorker(langSel.value)
+      .then(function (w) { return w.recognize(current); })
+      .then(function (res) {
+        output.value = (res.data.text || "").replace(/\n{3,}/g, "\n\n").trim();
+        if (!output.value) showError("No text was found in this image. Try a clearer or larger image, or change the language.");
+        updateCount(); bar.style.width = "100%"; statusEl.textContent = "Done!";
+      })
+      .catch(function (e) { showError("Something went wrong while reading the image. Please try again."); console.error(e); })
+      .then(function () { busy = false; runBtn.disabled = false; runBtn.querySelector("span").textContent = "Extract text"; });
+  });
+
+  clearBtn.addEventListener("click", function () {
+    current = null; fileInput.value = ""; if (objectUrl) URL.revokeObjectURL(objectUrl); objectUrl = null;
+    preview.hidden = true; preview.removeAttribute("src"); empty.hidden = false; runBtn.disabled = true; clearBtn.hidden = true;
+    progress.hidden = true; output.value = ""; showError(""); updateCount();
+  });
+
+  output.addEventListener("input", updateCount);
+  copyBtn.addEventListener("click", function () {
+    var done = function () { copyBtn.querySelector("span").textContent = "Copied!"; setTimeout(function () { copyBtn.querySelector("span").textContent = "Copy text"; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(output.value).then(done, function () { output.select(); document.execCommand("copy"); done(); });
+    else { output.select(); document.execCommand("copy"); done(); }
+  });
+  dlBtn.addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([output.value], { type: "text/plain;charset=utf-8" }));
+    a.download = "image-text.txt"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+  updateCount();
+})();
+</script>
+{% endblock %}

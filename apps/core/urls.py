@@ -14,5 +14,6 @@ urlpatterns = [
     path("pricing/", views.pricing, name="pricing"),
     path("contact/", views.contact, name="contact"),
     path("privacy-policy/", views.privacy, name="privacy"),
+    path("image-to-text/", views.image_to_text, name="image_to_text"),
     path("<slug:slug>/", views.custom_page, name="custom_page"),
 ]
