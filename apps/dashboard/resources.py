@@ -159,7 +159,7 @@ RESOURCES = [
              ["name", "email", "subject", "is_read", "created_at"], ["is_read"],
              search_fields=["name", "email", "subject"],
              readonly_fields=["name", "email", "phone", "subject", "budget", "message", "created_at"],
-             can_add=False),
+             can_add=False, in_nav=False),  # shown at the top of the sidebar with an unread badge
     Resource("users", User, "Users", "users", "Access Control",
              ["username", "email", "role", "is_active", "date_joined"],
              form_class=UserAdminForm, search_fields=["username", "email", "first_name"],

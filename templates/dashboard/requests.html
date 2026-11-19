@@ -2,6 +2,14 @@
 {% block page_title %}Requests{% endblock %}
 {% block heading %}{% if manage %}Client requests{% else %}My requests{% endif %}{% endblock %}
 {% block dash %}
+{% if manage and inbox_unread %}
+<a href="{% url 'dashboard:list' 'messages' %}" class="card inbox-note">
+  <span class="card-icon">{% icon 'mail' 20 %}</span>
+  <span><strong>{{ inbox_unread }} new message{{ inbox_unread|pluralize }} from the website contact form</strong>
+  <small>Contact-form messages are in the Inbox. This page lists project requests from logged-in clients.</small></span>
+  <span class="btn btn-primary btn-sm">Open Inbox {% icon 'arrow' 14 %}</span>
+</a>
+{% endif %}
 <div class="card panel">
   <div class="panel-head">
     <div class="filters" style="margin:0">

@@ -13,6 +13,10 @@
     {% if perms.core.view_servicerequest or perms.core.manage_servicerequest %}
     <a href="{% url 'dashboard:requests' %}" class="side-link {% if section == 'requests' %}active{% endif %}">{% icon 'inbox' 18 %} {% if perms.core.manage_servicerequest %}Client Requests{% else %}My Requests{% endif %}</a>
     {% endif %}
+    {% if perms.core.view_contactmessage %}
+    <a href="{% url 'dashboard:list' 'messages' %}" class="side-link {% if section == 'messages' %}active{% endif %}">{% icon 'mail' 18 %} Inbox
+      {% if inbox_unread %}<span class="side-badge" title="{{ inbox_unread }} unread">{{ inbox_unread }}</span>{% endif %}</a>
+    {% endif %}
     {% for group, items in nav_groups.items %}
       <div class="side-group">{{ group }}</div>
       {% for r in items %}

@@ -227,3 +227,15 @@ class StatsAndMarkupTests(TestCase):
         Service.objects.create(title="Test service", short_description="x")
         html = self.client.get("/").content.decode()
         self.assertTrue(re.search(r'data-count="\d+">\d+</span>', html))
+
+
+class InboxVisibilityTests(TestCase):
+    def test_unread_contact_messages_are_visible_in_dashboard(self):
+        admin = User.objects.create_superuser("admin", "admin@example.com", "Blue-River-42!x")
+        self.client.post("/contact/", {"name": "Lead", "email": "lead@example.com", "subject": "Web app",
+                                       "message": "Hi"})
+        self.client.force_login(admin)
+        page = self.client.get("/dashboard/requests/").content.decode()
+        self.assertIn('class="side-badge"', page)                  # sidebar badge with unread count
+        self.assertIn("1 new message from the website contact form", page)
+        self.assertIn("Lead", self.client.get("/dashboard/m/messages/").content.decode())

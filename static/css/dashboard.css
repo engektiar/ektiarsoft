@@ -180,3 +180,12 @@ details.add-sec > summary::-webkit-details-marker { display: none; }
   }
 }
 .list-plain li { align-items: center; }
+
+/* unread badge in the sidebar + inbox notice */
+.side-badge { margin-left: auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 99px; display: inline-grid; place-items: center; font-size: .72rem; font-weight: 700; color: #fff; background: var(--danger); }
+.inbox-note { display: flex; align-items: center; gap: 14px; padding: 16px 20px; margin-bottom: 20px; border-color: color-mix(in srgb, var(--primary) 40%, transparent); background: var(--grad-soft); }
+.inbox-note:hover { transform: none; border-color: var(--primary); }
+.inbox-note .card-icon { margin: 0; flex-shrink: 0; }
+.inbox-note > span:nth-child(2) { flex: 1; min-width: 0; }
+.inbox-note small { display: block; color: var(--muted); font-size: .82rem; }
+@media (max-width: 640px) { .inbox-note { flex-wrap: wrap; } .inbox-note .btn { width: 100%; } }

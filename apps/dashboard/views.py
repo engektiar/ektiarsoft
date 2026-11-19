@@ -28,7 +28,10 @@ def _nav(user):
 
 
 def _ctx(request, **extra):
-    return {"nav_groups": _nav(request.user), **extra}
+    ctx = {"nav_groups": _nav(request.user), **extra}
+    if request.user.has_perm("core.view_contactmessage"):
+        ctx["inbox_unread"] = ContactMessage.objects.filter(is_read=False).count()
+    return ctx
 
 
 def _resource(key, user, action):
