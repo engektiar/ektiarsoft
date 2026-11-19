@@ -19,7 +19,7 @@ from django.db import connections, models, transaction
 
 
 class Command(BaseCommand):
-    help = "Copy the local database and uploaded files to Neon (CLOUD_DATABASE_URL) and Cloudinary."
+    help = "Copy the local database and uploaded files to the cloud database (CLOUD_DATABASE_URL)."
 
     def add_arguments(self, parser):
         parser.add_argument("--yes", action="store_true", help="Do not ask for confirmation.")
@@ -60,8 +60,6 @@ class Command(BaseCommand):
         # 4) upload files
         if skip_files:
             self.stdout.write("4/4 Skipped files (--skip-files).")
-        elif not os.environ.get("CLOUDINARY_URL"):
-            self.stdout.write(self.style.WARNING("4/4 Skipped files: CLOUDINARY_URL is not set in .env."))
         else:
             self._upload_files()
         self.stdout.write(self.style.SUCCESS("Done! Your cloud database is now a copy of this site."))
@@ -83,9 +81,15 @@ class Command(BaseCommand):
                     )
 
     def _upload_files(self):
+        """Uploads go to Cloudinary if CLOUDINARY_URL is set, otherwise into the cloud database."""
+        import mimetypes
+
+        from apps.core.models import StoredFile
         from apps.core.storage import CloudinaryStorage
 
-        storage, done, missing = CloudinaryStorage(), 0, []
+        use_cloudinary = bool(os.environ.get("CLOUDINARY_URL"))
+        target = "Cloudinary" if use_cloudinary else "the cloud database"
+        storage, done, missing = (CloudinaryStorage() if use_cloudinary else None), 0, []
         names = set()
         for model in apps.get_models():
             fields = [f for f in model._meta.fields if isinstance(f, models.FileField)]
@@ -93,14 +97,20 @@ class Command(BaseCommand):
                 for name in model.objects.exclude(**{f.name: ""}).values_list(f.name, flat=True):
                     if name:
                         names.add(name)
-        self.stdout.write(f"4/4 Uploading {len(names)} file(s) to Cloudinary...")
+        self.stdout.write(f"4/4 Uploading {len(names)} file(s) to {target}...")
         for name in sorted(names):
             path = os.path.join(settings.MEDIA_ROOT, name)
             if not os.path.exists(path):
                 missing.append(name)
                 continue
             with open(path, "rb") as fh:
-                storage._save(name, fh)
+                if use_cloudinary:
+                    storage._save(name, fh)
+                else:
+                    data = fh.read()
+                    StoredFile.objects.using("cloud").update_or_create(name=name, defaults={
+                        "content": data, "size": len(data),
+                        "content_type": mimetypes.guess_type(name)[0] or "application/octet-stream"})
             done += 1
             self.stdout.write(f"   ok  {name}")
         if missing:

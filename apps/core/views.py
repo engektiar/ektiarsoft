@@ -102,3 +102,26 @@ def error_404(request, exception):
 
 def error_500(request):
     return render(request, "500.html", status=500)
+
+
+def stored_file(request, name):
+    """Serve an upload kept in the database (DatabaseStorage). Names are never reused
+    (Django adds a suffix on clashes), so responses can be cached for a long time."""
+    from django.utils.http import http_date
+
+    from .models import StoredFile
+
+    obj = get_object_or_404(StoredFile, name=name)
+    etag = f'"{obj.pk}-{int(obj.updated_at.timestamp())}"'
+    if request.headers.get("If-None-Match") == etag:
+        resp = HttpResponse(status=304)
+    else:
+        resp = HttpResponse(bytes(obj.content), content_type=obj.content_type or "application/octet-stream")
+        resp["Content-Length"] = obj.size
+    resp["ETag"] = etag
+    resp["Last-Modified"] = http_date(obj.updated_at.timestamp())
+    resp["Cache-Control"] = "public, max-age=31536000, immutable"
+    resp["X-Content-Type-Options"] = "nosniff"
+    if not (obj.content_type or "").startswith("image/") or obj.content_type == "image/svg+xml":
+        resp["Content-Disposition"] = "attachment"  # never render uploaded HTML/SVG inline
+    return resp

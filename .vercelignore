@@ -1,0 +1,21 @@
+# never upload secrets, local data or tooling to Vercel
+.env
+.env.*
+!.env.example
+*.sqlite3
+media/
+staticfiles/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.vscode/
+.idea/
+.mcp.json
+.cursor/
+.claude/
+charter.yaml
+charter_audits/
+CLAUDE.md
+system-prompt.txt
+*.log

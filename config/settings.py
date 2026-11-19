@@ -146,13 +146,15 @@ def _db_from_url(url):
 
 
 # DATABASE_URL (e.g. from Neon) overrides DB_ENGINE — used on Vercel.
-if env("DATABASE_URL"):
-    DATABASES["default"] = _db_from_url(env("DATABASE_URL"))
+# (Vercel's database integration may name it POSTGRES_URL instead.)
+_DB_URL = env("DATABASE_URL") or env("POSTGRES_URL")
+if _DB_URL:
+    DATABASES["default"] = _db_from_url(_DB_URL)
 # CLOUD_DATABASE_URL: a second connection used only by `manage.py clone_to_cloud`.
 if env("CLOUD_DATABASE_URL"):
     DATABASES["cloud"] = _db_from_url(env("CLOUD_DATABASE_URL"))
 if ON_VERCEL and DATABASES["default"]["ENGINE"].endswith("sqlite3"):
-    raise RuntimeError("Set DATABASE_URL (your Neon connection string) in Vercel -> Environment Variables.")
+    raise RuntimeError("No database: in Vercel open Storage -> Create Database and connect it to this project.")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -186,14 +188,21 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-# Cloudinary is used on Vercel; locally only if USE_CLOUDINARY=True (clone_to_cloud uses it directly)
-USE_CLOUDINARY = bool(env("CLOUDINARY_URL")) and (ON_VERCEL or env_bool("USE_CLOUDINARY", False))
-if ON_VERCEL and not USE_CLOUDINARY:
-    raise RuntimeError("Set CLOUDINARY_URL in Vercel -> Environment Variables (uploads need cloud storage).")
+# Where uploads go:
+#   local computer            -> media/ folder (default)
+#   Vercel + CLOUDINARY_URL   -> Cloudinary
+#   Vercel without Cloudinary -> inside the database (DatabaseStorage, served at /files/...)
+# Override anywhere with MEDIA_BACKEND=filesystem|cloudinary|database
+MEDIA_BACKEND = (env("MEDIA_BACKEND") or (
+    ("cloudinary" if env("CLOUDINARY_URL") else "database") if ON_VERCEL else "filesystem")).lower()
+_MEDIA_STORAGE = {
+    "filesystem": "django.core.files.storage.FileSystemStorage",
+    "cloudinary": "apps.core.storage.CloudinaryStorage",
+    "database": "apps.core.storage.DatabaseStorage",
+}[MEDIA_BACKEND]
 STORAGES = {
     # uploads: Cloudinary when CLOUDINARY_URL is set, otherwise the local media/ folder
-    "default": {"BACKEND": "apps.core.storage.CloudinaryStorage" if USE_CLOUDINARY
-                else "django.core.files.storage.FileSystemStorage"},
+    "default": {"BACKEND": _MEDIA_STORAGE},
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage" if (DEBUG or ON_VERCEL)
         else "whitenoise.storage.CompressedManifestStaticFilesStorage"

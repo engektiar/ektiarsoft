@@ -5,7 +5,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
 from apps.core.sitemaps import SITEMAPS
-from apps.core.views import robots_txt
+from apps.core.views import robots_txt, stored_file
 
 admin.site.site_header = "Studio Administration"
 admin.site.site_title = "Studio Admin"
@@ -17,6 +17,7 @@ urlpatterns = [
     path("blog/", include("apps.blog.urls")),
     path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
     path("robots.txt", robots_txt, name="robots_txt"),
+    path("files/<path:name>", stored_file, name="stored_file"),
     path("", include("apps.core.urls")),
 ]
 

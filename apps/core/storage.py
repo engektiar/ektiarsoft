@@ -70,3 +70,45 @@ class CloudinaryStorage(Storage):
 
     def size(self, name):
         return 0
+
+
+@deconstructible
+class DatabaseStorage(Storage):
+    """Stores uploads as rows in core_storedfile — no extra service needed.
+    Fine for a portfolio (a handful of images, each max 4 MB)."""
+
+    def _model(self):
+        from apps.core.models import StoredFile
+
+        return StoredFile
+
+    def _save(self, name, content):
+        import mimetypes
+
+        name = name.replace("\\", "/")
+        if hasattr(content, "seek"):
+            content.seek(0)
+        data = content.read()
+        ctype = getattr(content, "content_type", None) or mimetypes.guess_type(name)[0] or "application/octet-stream"
+        self._model().objects.update_or_create(
+            name=name, defaults={"content": data, "content_type": ctype, "size": len(data)})
+        return name
+
+    def _open(self, name, mode="rb"):
+        obj = self._model().objects.get(name=name)
+        return ContentFile(bytes(obj.content), name=name)
+
+    def exists(self, name):
+        return self._model().objects.filter(name=name).exists()
+
+    def delete(self, name):
+        if name:
+            self._model().objects.filter(name=name).delete()
+
+    def size(self, name):
+        return self._model().objects.filter(name=name).values_list("size", flat=True).first() or 0
+
+    def url(self, name):
+        from urllib.parse import quote
+
+        return "/files/" + quote(name.replace("\\", "/"))

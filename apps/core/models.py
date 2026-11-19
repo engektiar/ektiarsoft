@@ -294,7 +294,7 @@ class ServiceRequest(models.Model):
 
 RESERVED_SLUGS = {
     "admin", "accounts", "dashboard", "blog", "about", "services", "portfolio", "pricing",
-    "contact", "privacy-policy", "static", "media", "home", "sitemap", "robots",
+    "contact", "privacy-policy", "static", "media", "files", "home", "sitemap", "robots",
 }
 
 
@@ -533,3 +533,20 @@ class MenuItem(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.get_location_display()})"
+
+
+class StoredFile(models.Model):
+    """Uploaded file kept inside the database (used on Vercel, which has no disk).
+    Served at /files/<name> by apps.core.views.stored_file."""
+
+    name = models.CharField(max_length=255, unique=True)
+    content = models.BinaryField()
+    content_type = models.CharField(max_length=100, blank=True)
+    size = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "stored file"
+
+    def __str__(self):
+        return self.name
